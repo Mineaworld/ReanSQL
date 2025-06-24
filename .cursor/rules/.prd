@@ -1,0 +1,310 @@
+# SQL Practice Web App - Product Requirements Document (PRD)
+
+## 1. Overview
+
+The SQL Practice Web App is an interactive learning platform that allows users to practice and improve their SQL skills by uploading PDFs containing SQL exercises. The application automatically parses uploaded PDFs, presents questions in an organized manner, and provides a comprehensive interface for SQL code input with real-time feedback. Users can skip questions and revisit them in random order, while AI integration offers intelligent hints and guidance. MongoDB serves as the backend database for storing user data, progress tracking, and submission history.
+
+## 2. Objectives
+
+- **Primary Goal**: Create an intuitive web application for SQL query practice
+- **Key Objectives**:
+  - Enable PDF upload and automatic parsing of SQL exercises
+  - Provide an advanced code editor with syntax highlighting and real-time feedback
+  - Implement question randomization and skipping functionality
+  - Integrate AI-powered assistance for learning support
+  - Track and visualize user progress and performance metrics
+
+## 3. Target Users
+
+### Primary Users
+- **Personal Learners**: Individual users seeking to improve SQL skills through structured practice
+
+### Secondary Users
+- **Educational Groups**: Friends, classmates, and study groups interested in collaborative SQL learning
+- **Instructors**: Teachers who may use the platform for student assignments
+
+## 4. Features
+
+### 4.1 Core Features
+
+#### 📄 PDF Upload and Parsing
+- **Automatic Processing**: Seamless upload and parsing of PDF documents containing SQL exercises
+- **Smart Extraction**: Intelligent identification and structuring of questions from various PDF formats
+- **Format Validation**: Ensures uploaded files are valid and contain SQL-related content
+
+#### 💻 Code Editor
+- **Advanced Interface**: Large, responsive text area optimized for SQL code input
+- **Syntax Highlighting**: Real-time SQL syntax highlighting for improved readability
+- **Auto-completion**: Intelligent code suggestions and auto-completion features
+- **Real-time Feedback**: Immediate validation and error detection
+
+#### ⏭️ Question Management
+- **Skip Functionality**: Ability to skip challenging questions and return later
+- **Randomization**: Questions reappear in random order after being skipped
+- **Progress Tracking**: Visual indicators of completed, skipped, and remaining questions
+
+#### ✅ Submission and Feedback
+- **One-click Submission**: Simple button interface for query evaluation
+- **Instant Results**: Immediate feedback on query correctness
+- **Detailed Analysis**: Comprehensive error reporting and suggestions
+
+####  Error Highlighting
+- **Visual Indicators**: Red highlighting of incorrect SQL syntax and logic
+- **Attempt Tracking**: Counter displaying number of incorrect attempts per question
+- **Error Messages**: Clear, actionable error descriptions
+
+####  AI Assistance
+- **Intelligent Chat**: AI-powered chat interface for hints and explanations
+- **Contextual Help**: Situation-aware assistance based on current question and user progress
+- **Progressive Hints**: Gradual hint system that doesn't reveal complete solutions
+
+####  Progress Tracking
+- **Performance Metrics**: Comprehensive tracking of correct answers and attempt counts
+- **Visual Analytics**: Charts and graphs showing progress over time
+- **Achievement System**: Milestone tracking and motivational elements
+
+####  Responsive Design
+- **Cross-platform Compatibility**: Optimized for desktop, tablet, and mobile devices
+- **Adaptive Layout**: Dynamic interface that adjusts to screen size and orientation
+- **Touch-friendly**: Mobile-optimized controls and interactions
+
+### 4.2 Additional Features
+
+#### 💡 Enhanced AI Features
+- **Progressive Hints**: AI suggests improvements after multiple incorrect attempts
+- **Learning Paths**: Personalized recommendations based on user performance
+
+#### ⏱️ Optional Features
+- **Timer Mode**: Challenge mode with time limits for advanced users
+- **Customization**: Theme switching (light/dark) and font size adjustments
+- **Leaderboards**: Competitive features for shared learning environments
+
+## 5. Non-Functional Requirements
+
+### Performance
+- **Fast Loading**: Sub-3 second initial page load times
+- **Real-time Response**: Immediate feedback on query submissions
+- **Smooth Interactions**: 60fps animations and transitions
+
+### Security
+- **Data Protection**: Secure storage of user progress and submissions
+- **Privacy Compliance**: GDPR-compliant data handling practices
+- **Input Validation**: Robust protection against malicious inputs
+
+### Scalability
+- **Multi-user Support**: Architecture designed for concurrent user access
+- **Database Optimization**: Efficient MongoDB queries and indexing
+- **API Rate Limiting**: Protection against abuse and overload
+
+### Reliability
+- **High Availability**: 99.9% uptime target
+- **Error Handling**: Graceful degradation and user-friendly error messages
+- **Data Backup**: Regular automated backups of user data
+
+## 6. Technical Stack
+
+### Frontend
+- **Framework**: Next.js (React-based) for optimal performance and SEO
+- **Styling**: Tailwind CSS for rapid, responsive UI development
+- **State Management**: React Context API or Zustand for state handling
+
+### Backend
+- **Runtime**: Node.js with Express.js or Next.js API routes
+- **Authentication**: Optional JWT-based authentication for future expansion
+
+### Database
+- **Primary**: MongoDB Atlas for managed, scalable database solution
+- **Caching**: Redis for session management and performance optimization
+
+### AI Integration
+- **Provider**: OpenAI API (GPT-4 or GPT-3.5-turbo)
+- **Cost Management**: Intelligent API usage to minimize costs
+
+### Hosting & Deployment
+- **Frontend**: Vercel for Next.js deployment
+- **Database**: MongoDB Atlas cloud hosting
+- **CDN**: Global content delivery for optimal performance
+
+## 7. User Flow
+
+```mermaid
+graph TD
+    A[Landing Page] --> B[Upload PDF]
+    B --> C[PDF Parsing]
+    C --> D[Question Display]
+    D --> E[Code Editor]
+    E --> F[Submit Query]
+    F --> G{Correct?}
+    G -->|Yes| H[Success Feedback]
+    G -->|No| I[Error Highlighting]
+    I --> J[AI Assistance]
+    J --> E
+    H --> K[Next Question]
+    K --> D
+    D --> L[Skip Question]
+    L --> M[Random Queue]
+    M --> D
+```
+
+### Detailed Flow Steps
+
+1. **Landing Page**: Users see app introduction and upload option
+2. **PDF Upload**: Drag-and-drop or file picker interface
+3. **Automatic Parsing**: Background processing with progress indicator
+4. **Question Interface**: Clean, focused question display with code editor
+5. **Code Input**: Syntax-highlighted editor with auto-completion
+6. **Submission**: One-click evaluation with immediate feedback
+7. **Feedback Loop**: Error highlighting and AI assistance integration
+8. **Progress Tracking**: Real-time updates to performance metrics
+
+## 8. Database Structure
+
+### Collections
+
+#### Users Collection
+```json
+{
+  "_id": "ObjectId",
+  "username": "string",
+  "email": "string (optional)",
+  "created_at": "Date",
+  "last_login": "Date",
+  "preferences": {
+    "theme": "light|dark",
+    "font_size": "number"
+  }
+}
+```
+
+#### Questions Collection
+```json
+{
+  "_id": "ObjectId",
+  "pdf_source": "string",
+  "question_text": "string",
+  "expected_result": "string",
+  "difficulty": "easy|medium|hard",
+  "category": "string",
+  "created_at": "Date"
+}
+```
+
+#### Submissions Collection
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "question_id": "ObjectId",
+  "submitted_code": "string",
+  "is_correct": "boolean",
+  "attempt_count": "number",
+  "error_details": "string",
+  "execution_time": "number",
+  "submitted_at": "Date"
+}
+```
+
+#### Progress Collection
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "total_questions": "number",
+  "correct_answers": "number",
+  "total_attempts": "number",
+  "average_attempts": "number",
+  "completion_rate": "number",
+  "last_updated": "Date"
+}
+```
+
+## 9. Development Milestones
+
+### Phase 1: Foundation (Weeks 1-2)
+- [ ] Project setup and environment configuration
+- [ ] UI/UX design and wireframing
+- [ ] Basic Next.js application structure
+- [ ] MongoDB connection and basic CRUD operations
+
+### Phase 2: Core Features (Weeks 3-4)
+- [ ] PDF upload and parsing implementation
+- [ ] Code editor with syntax highlighting
+- [ ] Basic question display and navigation
+- [ ] Submission and feedback system
+
+### Phase 3: Advanced Features (Weeks 5-6)
+- [ ] AI integration and chat functionality
+- [ ] Progress tracking and analytics
+- [ ] Error highlighting and attempt tracking
+- [ ] Question randomization and skipping
+
+### Phase 4: Polish & Deploy (Weeks 7-8)
+- [ ] Comprehensive testing and bug fixes
+- [ ] Performance optimization
+- [ ] Responsive design implementation
+- [ ] Deployment to production environment
+
+## 10. Project Timeline
+
+| Week | Focus Area | Deliverables |
+|------|------------|--------------|
+| 1 | Planning & Setup | Project structure, design mockups |
+| 2 | Foundation | Basic app, database setup |
+| 3 | Core UI | Code editor, question display |
+| 4 | PDF Processing | Upload, parsing, question extraction |
+| 5 | AI Integration | Chat interface, hint system |
+| 6 | Testing & Polish | Bug fixes, performance optimization |
+| 7 | Deployment | Production deployment, monitoring |
+| 8 | Launch | Final testing, documentation |
+
+## 11. Risk Assessment & Mitigation
+
+### Technical Risks
+
+#### PDF Parsing Complexity
+- **Risk**: Complex PDF layouts may not parse correctly
+- **Mitigation**: Implement multiple parsing strategies and fallback mechanisms
+- **Monitoring**: Regular testing with diverse PDF formats
+
+#### AI API Costs
+- **Risk**: High costs with increased usage
+- **Mitigation**: Implement usage limits and cost monitoring
+- **Strategy**: Start with minimal AI features, expand based on usage
+
+#### Performance at Scale
+- **Risk**: Performance degradation with multiple users
+- **Mitigation**: Implement caching, database optimization, and CDN
+- **Monitoring**: Performance metrics and user feedback
+
+### Business Risks
+
+#### User Adoption
+- **Risk**: Low user engagement or retention
+- **Mitigation**: Focus on core functionality and user experience
+- **Strategy**: Start with personal use, gather feedback for improvements
+
+#### Technical Debt
+- **Risk**: Accumulation of technical debt affecting maintainability
+- **Mitigation**: Regular code reviews and refactoring
+- **Strategy**: Maintain clean architecture from the start
+
+## 12. Success Metrics
+
+### Technical Metrics
+- **Performance**: <3s page load time, <1s query response time
+- **Reliability**: 99.9% uptime, <1% error rate
+- **Scalability**: Support for 100+ concurrent users
+
+### User Experience Metrics
+- **Engagement**: Average session duration >10 minutes
+- **Completion**: >70% question completion rate
+- **Satisfaction**: User feedback score >4.0/5.0
+
+### Learning Effectiveness
+- **Progress**: Measurable improvement in SQL skills over time
+- **Retention**: User return rate >60% after first week
+- **Success**: >80% correct answer rate on repeated questions
+
+---
+
+*This PRD serves as the foundational document for the SQL Practice Web App development. Regular updates and revisions will be made based on development progress and user feedback.*

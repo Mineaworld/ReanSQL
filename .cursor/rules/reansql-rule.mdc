@@ -1,0 +1,82 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Default Cursor (Standard)
+
+When to use: The default cursor should be visible when the user is not interacting with clickable elements.
+
+Behavior: A standard arrow cursor will be used across the app, giving users a simple and familiar experience.
+
+Pointer Cursor (Clickable Elements)
+
+When to use: For all interactive elements such as buttons (e.g., Submit), clickable questions in the list, and any other clickable interface components.
+
+Behavior: The cursor will change to a hand icon (pointer) to indicate interactivity, making it clear to the user that these elements are clickable.
+
+Examples:
+
+Submit Button: The cursor should switch to a pointer when hovered over the blue Submit button.
+
+Question List: When hovering over a question in the list on the left panel, the cursor should change to a pointer.
+
+Text Input Cursor (Code Editor)
+
+When to use: When the user clicks into the code editor or any text input area.
+
+Behavior: A standard I-beam cursor (text input cursor) will appear when the user clicks into the code editor to indicate they can start typing.
+
+Examples:
+
+SQL Code Editor: When clicking into the text area on the right panel to write a query, the cursor will become an I-beam.
+
+Resize Cursor (Resizing Panels)
+
+When to use: If the app design allows resizing of panels (e.g., the left panel with questions and the right panel with the code editor).
+
+Behavior: The cursor will change to a resize icon (usually a double arrow cursor) to indicate the user can resize the panels.
+
+Examples:
+
+Panel Divider: If a vertical divider between the left and right panels can be dragged to resize the area, the cursor will change when hovering over the divider.
+
+Error Feedback Cursor (On Error Highlight)
+
+When to use: When the user makes an error in their SQL query.
+
+Behavior: The cursor will change to a not-allowed icon (circle with a line) over the specific erroneous code or when hovering over areas requiring correction, reinforcing that the input is incorrect.
+
+Examples:
+
+Error Highlight: When the user hovers over a part of their code that contains an error (e.g., highlighted in red), the cursor may show the not-allowed icon to signify the error.
+
+Loading Cursor (During Data Processing)
+
+When to use: If the app is processing a user's query or loading data, such as waiting for the system to check a SQL query or parsing a PDF.
+
+Behavior: The cursor will change to a loading spinner (hourglass or spinning circle) to inform the user that an operation is in progress.
+
+Examples:
+
+Query Submission: After the user clicks Submit, while the system checks the query, the cursor will become a loading spinner until the feedback is shown.
+
+Help Cursor (AI Assistance)
+
+When to use: When the user clicks or hovers over the AI chat support button for hints or guidance.
+
+Behavior: The cursor will turn into a question mark or help icon when hovering over the AI assistance chat area.
+
+Examples:
+
+AI Chat Button: The cursor changes when hovering over the button or icon to indicate that the user can ask the AI for help.
+
+Guidelines for Cursor Design:
+Consistency: Ensure that cursor changes are consistent across all interactive elements to enhance user familiarity.
+
+Smooth Transitions: Avoid abrupt cursor changes that could confuse users. Transitions between different cursor states should feel natural.
+
+User Feedback: Ensure that the cursor change serves as a clear visual cue for the action that can be performed, enhancing accessibility and usability.
+
+
+Accessibility: Use hover effects and cursor changes that are easily perceivable for all users, including those with visual impairments.
