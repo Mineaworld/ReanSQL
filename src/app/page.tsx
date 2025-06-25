@@ -9,6 +9,8 @@ export default function Home() {
   const [sqlInput, setSqlInput] = useState('');
   const [questions, setQuestions] = useState<{ _id: string; questionText: string; expectedResult: string }[] | null>(null);
   const [feedback, setFeedback] = useState<null | { isCorrect: boolean }>(null);
+  const [hint, setHint] = useState<string | null>(null);
+  const [hintLoading, setHintLoading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -82,6 +84,32 @@ export default function Home() {
       setFeedback(null);
       setError('An error occurred while submitting.');
     }
+  };
+
+  const handleGetHint = async () => {
+    if (!selectedQuestion) return;
+    setHint(null);
+    setHintLoading(true);
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'hint',
+          questionText: selectedQuestion.questionText,
+          userSql: sqlInput,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHint(data.hint);
+      } else {
+        setHint('Failed to get hint.');
+      }
+    } catch {
+      setHint('Failed to get hint.');
+    }
+    setHintLoading(false);
   };
 
   const selectedQuestion =
@@ -194,6 +222,14 @@ export default function Home() {
               >
                 Submit
               </button>
+              <button
+                disabled={!selectedQuestion || hintLoading}
+                onClick={handleGetHint}
+                className={`ml-2 rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity
+                  ${selectedQuestion && !hintLoading ? 'bg-green-600 dark:bg-green-700 opacity-100 cursor-pointer' : 'bg-green-600 dark:bg-green-700 opacity-50 cursor-not-allowed'}`}
+              >
+                {hintLoading ? 'Getting Hint...' : 'Get Hint'}
+              </button>
             </div>
             <textarea
               className="flex-1 w-full font-mono text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -206,6 +242,11 @@ export default function Home() {
             {feedback && (
               <div className={`mt-4 text-center font-bold text-lg ${feedback.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {feedback.isCorrect ? 'Correct! 🎉' : 'Incorrect. Try again!'}
+              </div>
+            )}
+            {hint && (
+              <div className="mt-4 p-3 rounded bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700">
+                <span className="font-semibold">AI Hint:</span> {hint}
               </div>
             )}
           </div>
