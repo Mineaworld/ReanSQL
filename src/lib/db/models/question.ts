@@ -11,8 +11,10 @@ const questionSchema = new mongoose.Schema({
   },
   expectedResult: {
     type: String,
-    required: true,
+    required: false,
+    default: '',
   },
+
   difficulty: {
     type: String,
     enum: ['easy', 'medium', 'hard'],
