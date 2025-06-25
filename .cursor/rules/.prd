@@ -107,6 +107,8 @@ The SQL Practice Web App is an interactive learning platform that allows users t
 - **Framework**: Next.js (React-based) for optimal performance and SEO
 - **Styling**: Tailwind CSS for rapid, responsive UI development
 - **State Management**: React Context API or Zustand for state handling
+- **UI Librariest**: Shadcn, hyperui.dev, daisyui, radix-ui, aceternity, mui, heroui
+- **Micro Animation**: framermotion or gsap for smooth animation
 
 ### Backend
 - **Runtime**: Node.js with Express.js or Next.js API routes
