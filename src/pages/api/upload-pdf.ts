@@ -18,9 +18,11 @@ async function getGeminiContent(questionText: string, type: GeminiType): Promise
   if (!GEMINI_API_KEY) return '';
   let prompt = '';
   if (type === 'answer') {
-    prompt = `You are an expert Oracle SQL tutor. Write the correct Oracle SQL query for this question below.\nQuestion: ${questionText}`;
+    prompt = `You are an expert Oracle SQL tutor. Write the correct Oracle SQL
+     query for this question below.\nQuestion: ${questionText}`;
   } else {
-    prompt = `You are an expert Oracle SQL tutor. Explain the correct answer for this question in a English simple words, concise, beginner-friendly way.\nQuestion: ${questionText}`;
+    prompt = `You are an expert Oracle SQL tutor. Explain the correct answer for this question
+    in a English simple words, concise, beginner-friendly way.\nQuestion: ${questionText}`;
   }
 
   const res = await fetch(
@@ -57,7 +59,7 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
           const data = await pdfParse(buffer);
           const rawText = data.text;
 
-          // 1. Split rawText into questions
+          // Split rawText into questions
           const questions = rawText
             .split(/\n\s*\n/) // split by empty lines
             .map(q => q.trim())
@@ -65,7 +67,7 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
 
           await connectDB();
 
-          // 3. Each question call Gemini for answer & explanation then store in DB
+          // Each question call Gemini for answer & explanation then store in DB
           const results = [];
           for (const questionText of questions) {
             const aiAnswer = await getGeminiContent(questionText, 'answer');
