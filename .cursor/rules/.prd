@@ -9,6 +9,7 @@ The SQL Practice Web App is an interactive learning platform that allows users t
 - **Primary Goal**: Create an intuitive web application for SQL query practice
 - **Key Objectives**:
   - Enable PDF upload and automatic parsing of SQL exercises
+  - Use AI to generate correct answers and explanations for each parsed question
   - Provide an advanced code editor with syntax highlighting and real-time feedback
   - Implement question randomization and skipping functionality
   - Integrate AI-powered assistance for learning support
@@ -27,10 +28,42 @@ The SQL Practice Web App is an interactive learning platform that allows users t
 
 ### 4.1 Core Features
 
-#### 📄 PDF Upload and Parsing
-- **Automatic Processing**: Seamless upload and parsing of PDF documents containing SQL exercises
-- **Smart Extraction**: Intelligent identification and structuring of questions from various PDF formats
-- **Format Validation**: Ensures uploaded files are valid and contain SQL-related content
+#### 📄 PDF Upload, Parsing, and AI Answer Generation
+- **Automatic Processing**: Seamless upload and parsing of PDF documents containing SQL exercises.
+- **Smart Extraction**: Intelligent identification and structuring of questions from various PDF formats.
+- **AI Answer Generation**: For each parsed question, the system uses AI to generate:
+  - The correct SQL answer.
+  - An explanation of the answer.
+- **Database Storage**: Each question, its AI-generated answer, and explanation are stored in MongoDB for later retrieval.
+
+#### 💻 Practice Mode (User Practice Experience)
+- **Question Presentation**: Users are shown one question at a time, with a code editor for SQL input.
+- **Answer Submission**: Users submit their SQL answer; the system uses AI to check correctness and provide feedback (correct/incorrect, explanation).
+- **Show Answer Option**: Users can reveal the AI-generated correct answer and explanation after attempting the question.
+- **Navigation**: Users can skip questions, revisit them, and move through questions in random order.
+
+#### 📚 Review Mode (Q&A Browsing)
+- **Question List**: Users can browse all parsed questions in a searchable/filterable list.
+- **Q&A Display**: Each question can be expanded to show:
+  - The question text.
+  - The AI-generated correct answer (SQL).
+  - The explanation.
+- **User Actions**: Users can copy answers, mark questions as "understood" or "need review," and search/filter by topic or difficulty.
+
+#### 🗄️ Database Structure (Questions Collection)
+```json
+{
+  "_id": "ObjectId",
+  "pdf_source": "string",
+  "question_text": "string",
+  "ai_answer": "string",         // AI-generated SQL answer
+  "explanation": "string",       // AI-generated explanation
+  "expected_result": "string",   // (optional, for future DB-based checking)
+  "difficulty": "easy|medium|hard",
+  "category": "string",
+  "created_at": "Date"
+}
+```
 
 #### 💻 Code Editor
 - **Advanced Interface**: Large, responsive text area optimized for SQL code input
@@ -133,19 +166,20 @@ The SQL Practice Web App is an interactive learning platform that allows users t
 graph TD
     A[Landing Page] --> B[Upload PDF]
     B --> C[PDF Parsing]
-    C --> D[Question Display]
-    D --> E[Code Editor]
-    E --> F[Submit Query]
-    F --> G{Correct?}
-    G -->|Yes| H[Success Feedback]
-    G -->|No| I[Error Highlighting]
-    I --> J[AI Assistance]
-    J --> E
-    H --> K[Next Question]
-    K --> D
-    D --> L[Skip Question]
-    L --> M[Random Queue]
-    M --> D
+    C --> D[AI Answer Generation]
+    D --> E[Question Display]
+    E --> F[Practice Mode: Code Editor]
+    F --> G[Submit Query]
+    G --> H{Correct?}
+    H -->|Yes| I[Success Feedback]
+    H -->|No| J[Error Highlighting]
+    J --> K[AI Assistance]
+    K --> F
+    I --> L[Show Answer/Explanation]
+    L --> M[Next/Skip Question]
+    M --> E
+    E --> N[Review Mode: Q&A List]
+    N --> O[Browse/Copy/Mark Q&A]
 ```
 
 ### Detailed Flow Steps
@@ -153,11 +187,12 @@ graph TD
 1. **Landing Page**: Users see app introduction and upload option
 2. **PDF Upload**: Drag-and-drop or file picker interface
 3. **Automatic Parsing**: Background processing with progress indicator
-4. **Question Interface**: Clean, focused question display with code editor
-5. **Code Input**: Syntax-highlighted editor with auto-completion
-6. **Submission**: One-click evaluation with immediate feedback
-7. **Feedback Loop**: Error highlighting and AI assistance integration
-8. **Progress Tracking**: Real-time updates to performance metrics
+4. **AI Answer Generation**: AI generates correct answers and explanations for each parsed question
+5. **Question Interface**: Clean, focused question display with code editor
+6. **Code Input**: Syntax-highlighted editor with auto-completion
+7. **Submission**: One-click evaluation with immediate feedback
+8. **Feedback Loop**: Error highlighting and AI assistance integration
+9. **Progress Tracking**: Real-time updates to performance metrics
 
 ## 8. Database Structure
 
@@ -184,7 +219,9 @@ graph TD
   "_id": "ObjectId",
   "pdf_source": "string",
   "question_text": "string",
-  "expected_result": "string",
+  "ai_answer": "string",         // AI-generated SQL answer
+  "explanation": "string",       // AI-generated explanation
+  "expected_result": "string",   // (optional, for future DB-based checking)
   "difficulty": "easy|medium|hard",
   "category": "string",
   "created_at": "Date"
@@ -233,6 +270,10 @@ graph TD
 - [ ] Code editor with syntax highlighting
 - [ ] Basic question display and navigation
 - [ ] Submission and feedback system
+- [ ] AI answer and explanation generation after PDF parsing
+- [ ] Store AI-generated answers/explanations in MongoDB
+- [ ] Practice mode: "Show Answer" and feedback UI
+- [ ] Review mode: Q&A browsing and search/filter
 
 ### Phase 3: Advanced Features (Weeks 5-6)
 - [ ] AI integration and chat functionality

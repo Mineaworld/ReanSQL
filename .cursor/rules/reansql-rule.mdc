@@ -5,6 +5,9 @@ alwaysApply: false
 ---
 Default Cursor (Standard)
 
+
+Help me build while learning it at the same time !!!
+
 When to use: The default cursor should be visible when the user is not interacting with clickable elements.
 
 Behavior: A standard arrow cursor will be used across the app, giving users a simple and familiar experience.

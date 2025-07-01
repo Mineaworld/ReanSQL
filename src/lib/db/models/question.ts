@@ -14,7 +14,16 @@ const questionSchema = new mongoose.Schema({
     required: false,
     default: '',
   },
-
+  aiAnswer: {
+    type: String,
+    required: false,
+    default: '',
+  },
+  explanation: {
+    type: String,
+    required: false,
+    default: '',
+  },
   difficulty: {
     type: String,
     enum: ['easy', 'medium', 'hard'],

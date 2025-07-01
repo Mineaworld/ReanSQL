@@ -36,8 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const hint = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No hint available.';
       res.status(200).json({ hint });
-    } catch (error) {
-      console.error('Gemini API error:', error);
+    } catch {
       res.status(500).json({ message: 'Failed to get hint from Gemini.' });
     }
   } else if (type === 'chat') {
