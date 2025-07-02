@@ -39,6 +39,27 @@ async function getGeminiContent(questionText: string, type: GeminiType): Promise
   return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
+// Helper to split PDF text into questions (copied from previous frontend logic)
+function parseQuestionsForDB(text: string) {
+  const questionRegex = /^([0-9]+[.)])\s*(.*)/;
+  const lines = text.split(/\r?\n/);
+  const questions: { questionText: string }[] = [];
+  let current: { questionText: string } | null = null;
+  for (const line of lines) {
+    const match = line.match(questionRegex);
+    if (match) {
+      if (current) questions.push(current);
+      // Start a new question, use the whole line as the question text
+      current = { questionText: line.trim() };
+    } else if (current && line.trim()) {
+      // Append wrapped lines and notes to the current question text
+      current.questionText += ' ' + line.trim();
+    }
+  }
+  if (current) questions.push(current);
+  return questions;
+}
+
 export default async function handler(req:NextApiRequest, res:NextApiResponse) {
     if(req.method !== 'POST') {
         return res.status(405).json({message: 'Method not allowed'});
@@ -54,22 +75,22 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
     });
 
     bb.on('finish', async () => {
+      console.log('finish event triggered');
         const buffer = Buffer.concat(pdfBuffer);
         try {
+          console.log('pdfParse started');
           const data = await pdfParse(buffer);
           const rawText = data.text;
+          console.log('pdfParse finished');
 
-          // Split rawText into questions
-          const questions = rawText
-            .split(/\n\s*\n/) // split by empty lines
-            .map(q => q.trim())
-            .filter(q => q.length > 0);
+          // Split rawText into questions using improved logic
+          const parsedQuestions = parseQuestionsForDB(rawText);
 
           await connectDB();
 
           // Each question call Gemini for answer & explanation then store in DB
           const results = [];
-          for (const questionText of questions) {
+          for (const { questionText } of parsedQuestions) {
             const aiAnswer = await getGeminiContent(questionText, 'answer');
             const explanation = await getGeminiContent(questionText, 'explanation');
             // Store in MongoDB

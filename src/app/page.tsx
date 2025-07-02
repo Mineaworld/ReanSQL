@@ -31,28 +31,14 @@ export default function Home() {
       });
       if (res.ok) {
         const data = await res.json();
-        setPdfText(data.text);
-        // Parse and save questions to DB
-        const parsedQuestions = parseQuestionsForDB(data.text);
-        console.log('Parsed questions:', parsedQuestions);
-        if (parsedQuestions.length > 0) {
-          const pdfSource = file.name;
-          const saveRes = await fetch('/api/questions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ questions: parsedQuestions, pdfSource }),
-          });
-          if (saveRes.ok) {
-            const saveData = await saveRes.json();
-            setQuestions(saveData.questions);
-          } else {
-            setError('Failed to save questions to database.');
-          }
+        if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+          setQuestions(data.questions);
         } else {
           setError('No questions found in PDF.');
         }
       } else {
-        setError('Failed to parse PDF.');
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error || 'Failed to parse PDF.');
       }
     } catch {
       setError('An error occurred while uploading.');
@@ -254,25 +240,4 @@ export default function Home() {
       </div>
     </div>
   );
-}
-
-// Restore parseQuestionsForDB function for parsing questions after PDF upload
-function parseQuestionsForDB(text: string) {
-  const questionRegex = /^([0-9]+[.)])\s*(.*)/;
-  const lines = text.split(/\r?\n/);
-  const questions: { questionText: string; expectedResult: string }[] = [];
-  let current: { questionText: string; expectedResult: string } | null = null;
-  for (const line of lines) {
-    const match = line.match(questionRegex);
-    if (match) {
-      if (current) questions.push(current);
-      // Start a new question, use the whole line as the question text
-      current = { questionText: line.trim(), expectedResult: '' };
-    } else if (current && line.trim()) {
-      // Append wrapped lines and notes to the current question text
-      current.questionText += ' ' + line.trim();
-    }
-  }
-  if (current) questions.push(current);
-  return questions;
 }
