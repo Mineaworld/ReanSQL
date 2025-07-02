@@ -88,11 +88,12 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
 
           await connectDB();
 
-          // Each question call Gemini for answer & explanation then store in DB
-          const results = [];
-          for (const { questionText } of parsedQuestions) {
-            const aiAnswer = await getGeminiContent(questionText, 'answer');
-            const explanation = await getGeminiContent(questionText, 'explanation');
+          // Each question call Gemini for answer & explanation then store in DB (parallelized)
+          const results = await Promise.all(parsedQuestions.map(async ({ questionText }) => {
+            const [aiAnswer, explanation] = await Promise.all([
+              getGeminiContent(questionText, 'answer'),
+              getGeminiContent(questionText, 'explanation'),
+            ]);
             // Store in MongoDB
             const doc = await Question.create({
               pdfSource: 'uploaded',
@@ -100,13 +101,13 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
               aiAnswer,
               explanation,
             });
-            results.push({
+            return {
               _id: doc._id,
               questionText,
               aiAnswer,
               explanation,
-            });
-          }
+            };
+          }));
 
           // Return the stored questions
           res.status(200).json({ questions: results });
