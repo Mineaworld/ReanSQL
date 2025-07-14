@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -11,6 +11,19 @@ export default function Home() {
   const [feedback, setFeedback] = useState<null | { isCorrect: boolean }>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [hintLoading, setHintLoading] = useState(false);
+
+  useEffect(() => {
+    // On mount, check localStorage for questions
+    const saved = localStorage.getItem('reansql_questions');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setQuestions(parsed);
+        }
+      } catch {}
+    }
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -33,15 +46,20 @@ export default function Home() {
         const data = await res.json();
         if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
           setQuestions(data.questions);
+          // Save to localStorage for Practice page
+          localStorage.setItem('reansql_questions', JSON.stringify(data.questions));
         } else {
           setError('No questions found in PDF.');
+          localStorage.removeItem('reansql_questions');
         }
       } else {
         const errData = await res.json().catch(() => ({}));
         setError(errData.error || 'Failed to parse PDF.');
+        localStorage.removeItem('reansql_questions');
       }
     } catch {
       setError('An error occurred while uploading.');
+      localStorage.removeItem('reansql_questions');
     }
     setLoading(false);
   };

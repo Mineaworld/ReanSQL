@@ -75,13 +75,10 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
     });
 
     bb.on('finish', async () => {
-      console.log('finish event triggered');
         const buffer = Buffer.concat(pdfBuffer);
         try {
-          console.log('pdfParse started');
           const data = await pdfParse(buffer);
           const rawText = data.text;
-          console.log('pdfParse finished');
 
           // Split rawText into questions using improved logic
           const parsedQuestions = parseQuestionsForDB(rawText);

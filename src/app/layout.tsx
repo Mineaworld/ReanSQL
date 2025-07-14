@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,12 @@ export default function RootLayout({
                   <img src="/ReanSQL.svg" alt="ReanSQL Logo" className="h-8 w-8" />
                   <span className="text-xl text-black font-semibold">ReanSQL</span>
                 </div>
+                {/* Navigation Menu */}
+                <nav className="flex gap-6">
+                  <Link href="/" className="text-gray-700 hover:text-blue-700 font-medium transition-colors cursor-pointer">Home</Link>
+                  <Link href="/practice" className="text-gray-700 hover:text-blue-700 font-medium transition-colors cursor-pointer">Practice</Link>
+                  <Link href="/review" className="text-gray-700 hover:text-blue-700 font-medium transition-colors cursor-pointer">Review</Link>
+                </nav>
               </div>
             </div>
           </header>
