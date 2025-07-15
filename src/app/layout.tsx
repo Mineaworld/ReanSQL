@@ -32,18 +32,19 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
         <main className="flex min-h-screen flex-col">
-          <header className="border-b border-gray-200 bg-white">
+          <header className="sticky top-0 z-30 backdrop-blur-lg bg-white/40 dark:bg-[#18181b]/60 border-b border-gray-200 dark:border-gray-800 shadow-md transition-all">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center gap-2">
                   <img src="/ReanSQL.svg" alt="ReanSQL Logo" className="h-8 w-8" />
-                  <span className="text-xl text-black font-semibold">ReanSQL</span>
+
+                  <a href="\"><span className="text-xl text-black dark:text-white font-extrabold tracking-tight select-none">ReanSQL</span></a>
                 </div>
                 {/* Navigation Menu */}
-                <nav className="flex gap-6">
-                  <Link href="/" className="text-gray-700 hover:text-blue-700 font-medium transition-colors cursor-pointer">Home</Link>
-                  <Link href="/practice" className="text-gray-700 hover:text-blue-700 font-medium transition-colors cursor-pointer">Practice</Link>
-                  <Link href="/review" className="text-gray-700 hover:text-blue-700 font-medium transition-colors cursor-pointer">Review</Link>
+                <nav className="flex gap-2 sm:gap-4 md:gap-6">
+                  <Link href="/" className="px-3 py-1.5 rounded-lg font-semibold text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-700 dark:hover:text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">Home</Link>
+                  <Link href="/practice" className="px-3 py-1.5 rounded-lg font-semibold text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-700 dark:hover:text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">Practice</Link>
+                  <Link href="/review" className="px-3 py-1.5 rounded-lg font-semibold text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-700 dark:hover:text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">Review</Link>
                 </nav>
               </div>
             </div>
