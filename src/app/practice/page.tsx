@@ -29,7 +29,6 @@ interface Question {
 export default function PracticePage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userCode, setUserCode] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -37,7 +36,6 @@ export default function PracticePage() {
   const [copied, setCopied] = useState(false);
   const lineCount = userCode.split('\n').length;
   const charCount = userCode.length;
-  const [uploading, setUploading] = useState(false);
 
   // Track per-question status: 'correct', 'incorrect', or undefined
   const [questionStatus, setQuestionStatus] = useState<Record<number, 'correct' | 'incorrect' | undefined>>({});
@@ -196,8 +194,6 @@ export default function PracticePage() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
-    setError('');
     setQuestions([]);
     setCurrentIdx(0);
     setUserCode('');
@@ -216,19 +212,17 @@ export default function PracticePage() {
           setQuestions(data.questions);
           localStorage.setItem('reansql_questions', JSON.stringify(data.questions));
         } else {
-          setError('No questions found in PDF.');
           localStorage.removeItem('reansql_questions');
         }
       } else {
         const errData = await res.json().catch(() => ({}));
-        setError(errData.error || 'Failed to parse PDF.');
+        console.error('Failed to parse PDF:', errData.error || 'Unknown error');
         localStorage.removeItem('reansql_questions');
       }
-    } catch {
-      setError('An error occurred while uploading.');
+    } catch (err) {
+      console.error('An error occurred while uploading:', err);
       localStorage.removeItem('reansql_questions');
     }
-    setUploading(false);
   };
 
   // Accordion open state for right panel (must be before early returns)
@@ -248,43 +242,6 @@ export default function PracticePage() {
     }
   }, [questionStatus, questions.length]);
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen bg-black"><div className="p-6 text-center bg-gray-900 text-gray-100 rounded shadow">Loading...</div></div>;
-  }
-  if (!questions.length) {
-    // Show upload prompt
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-black">
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-10 flex flex-col items-center">
-          <img src="/file.svg" alt="Upload" className="h-16 w-16 mb-4" />
-          <h2 className="text-2xl font-bold text-blue-700 dark:text-blue-300 mb-2">Upload a PDF to Start Practicing</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-4 text-center">Please upload a PDF file containing SQL questions. Your questions will be saved for this session.</p>
-          <label htmlFor="practice-upload" className="cursor-pointer rounded-md bg-blue-700 dark:bg-blue-600 px-6 py-2 text-lg font-semibold text-white shadow-sm hover:bg-blue-800 dark:hover:bg-blue-700 transition-colors mb-2" style={{ cursor: 'pointer' }}>
-            {uploading ? 'Uploading...' : 'Upload PDF'}
-            <input
-              id="practice-upload"
-              name="practice-upload"
-              type="file"
-              className="sr-only"
-              accept=".pdf"
-              onChange={handleFileChange}
-              disabled={uploading}
-            />
-          </label>
-          {error && <div className="mt-2 text-red-600 dark:text-red-400 font-semibold">{error}</div>}
-        </div>
-      </div>
-    );
-  }
-  if (error) {
-    return <div className="flex items-center justify-center min-h-screen bg-black"><div className="p-6 text-center text-red-400 bg-gray-900 rounded shadow">{error}</div></div>;
-  }
-  if (!questions.length) {
-    return <div className="flex items-center justify-center min-h-screen bg-black"><div className="p-6 text-center bg-gray-900 text-gray-100 rounded shadow">No questions found.</div></div>;
-  }
-
-  const question = questions[currentIdx];
-
   // Helper to extract first code block and explanation from markdown
   function extractFirstCodeBlock(markdown: string) {
     const codeBlockRegex = /```(?:sql)?\n([\s\S]*?)```/i;
@@ -299,6 +256,35 @@ export default function PracticePage() {
     }
     return { code: '', explanation: markdown };
   }
+
+  // Place all early returns first
+  if (loading) return (
+    <div className="flex flex-1 items-center justify-center min-h-[60vh]">
+      <p className="text-blue-700 dark:text-blue-300 text-center animate-pulse font-semibold text-lg">Loading questions...</p>
+    </div>
+  );
+  if (!questions || questions.length === 0) return (
+    <div className="flex flex-1 items-center justify-center min-h-[60vh]">
+      <div className="text-center">
+        <img src="/globe.svg" alt="Welcome" className="h-12 w-12 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-200">Welcome to Practice Mode</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-2">Upload a PDF with SQL exercises to get started.</p>
+        <label htmlFor="file-upload" className="cursor-pointer inline-block rounded-md bg-white dark:bg-gray-700 px-4 py-2 text-sm font-semibold text-blue-700 dark:text-blue-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 mt-2">
+          Upload PDF
+          <input
+            id="file-upload"
+            name="file-upload"
+            type="file"
+            className="sr-only"
+            accept=".pdf"
+            onChange={handleFileChange}
+          />
+        </label>
+      </div>
+    </div>
+  );
+  // Now it's safe to define question
+  const question = questions[currentIdx];
 
   return (
     <Tooltip.Provider>
@@ -423,7 +409,7 @@ export default function PracticePage() {
           {/* Ensure right panel doesn't expand with content */}
           {/* Add min-w-0 to both parent and aside for flexbox truncation */}
           <main className="flex-1 flex flex-col p-4 min-w-0 max-w-full">
-            {/* Toolbar */}
+        {/* Toolbar */}
             <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
               <button onClick={handleFormat} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-blue-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>Format SQL</button>
               <button onClick={handleReset} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-yellow-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>Reset</button>
@@ -431,7 +417,7 @@ export default function PracticePage() {
               <button onClick={handleThemeToggle} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 hover:text-black text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</button>
               <button onClick={handleFullScreenToggle} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-purple-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>{isFullScreen ? 'Exit Full Screen' : 'Full Screen'}</button>
               {/* Future UX buttons can go here */}
-            </div>
+        </div>
             {/* Main Card */}
             <div className="w-full h-full bg-white dark:bg-[#23272f] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-4 relative flex flex-col">
               {/* Clear Questions Button */}
@@ -454,73 +440,84 @@ export default function PracticePage() {
               </motion.button>
               <h1 className="text-3xl font-extrabold mb-6 text-blue-700 dark:text-blue-300 text-center tracking-tight">Practice Mode</h1>
               {/* Question Display */}
-              <div className="mb-6">
-                <div className="font-semibold mb-2 text-[#22223b] dark:text-gray-200 text-xl">Question {currentIdx + 1}:</div>
-                <div className="mb-2 text-[#22223b] dark:text-gray-100 text-lg whitespace-pre-line leading-relaxed">{question.questionText || question.question_text}</div>
-              </div>
+        <div className="mb-6">
+  <div className="mb-2 flex items-center gap-3">
+    <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-bold text-sm shadow">Q{currentIdx + 1}</span>
+    <span className="text-xl font-semibold text-[#22223b] dark:text-gray-200">Practice Question</span>
+  </div>
+  <div className="mb-2 text-sm text-blue-600 dark:text-blue-300 flex items-center gap-2">
+    <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2v2m6.364 1.636l-1.414 1.414M22 12h-2M19.364 19.364l-1.414-1.414M12 22v-2M4.636 19.364l1.414-1.414M2 12h2M4.636 4.636l1.414 1.414" /><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" fill="#fefcbf" /></svg>
+    Read the question carefully and write your SQL below!
+  </div>
+  <div className="bg-[#f5f7fa] dark:bg-[#23272f] rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+    <p className="text-lg text-[#22223b] dark:text-gray-100 leading-relaxed whitespace-pre-line">
+      {question.questionText || question.question_text || ''}
+    </p>
+  </div>
+</div>
               {/* Code Editor */}
-              <div className="mb-4">
+        <div className="mb-4">
                 <label className="block text-base font-semibold text-blue-700 dark:text-blue-200 mb-2" htmlFor="sql-editor">
-                  Write your SQL here
-                </label>
-                <div
+            Write your SQL here
+          </label>
+          <div
                   className="relative rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 shadow-xl focus-within:border-blue-500 transition-all duration-200 min-w-0 max-w-full overflow-x-auto"
                   style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' }}
-                >
-                  <CodeMirror
-                    id="sql-editor"
-                    value={userCode}
-                    height={`${editorHeight}px`}
-                    theme={editorTheme}
-                    extensions={[sql()]}
-                    onChange={(value: string) => setUserCode(value)}
-                    basicSetup={{ lineNumbers: true, autocompletion: true }}
-                    style={{
-                      fontSize: '1.15rem',
-                      fontFamily: 'Fira Mono, Menlo, Monaco, Consolas, monospace',
-                      background: 'transparent',
-                      borderRadius: '0.5rem',
-                      padding: '0.75rem 1rem',
-                      minHeight: '120px',
+          >
+            <CodeMirror
+              id="sql-editor"
+              value={userCode}
+              height={`${editorHeight}px`}
+              theme={editorTheme}
+              extensions={[sql()]}
+              onChange={(value: string) => setUserCode(value)}
+              basicSetup={{ lineNumbers: true, autocompletion: true }}
+              style={{
+                fontSize: '1.15rem',
+                fontFamily: 'Fira Mono, Menlo, Monaco, Consolas, monospace',
+                background: 'transparent',
+                borderRadius: '0.5rem',
+                padding: '0.75rem 1rem',
+                minHeight: '120px',
                       maxWidth: '100%',
                       overflowX: 'auto',
-                    }}
-                  />
+              }}
+            />
                   {/* Toolbar below editor */}
-                  <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-gray-900 bg-opacity-80 px-2 py-1 rounded shadow-md">
-                    <span className="text-xs text-gray-400 mr-2">{lineCount} lines, {charCount} chars</span>
-                    <button
-                      type="button"
+            <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-gray-900 bg-opacity-80 px-2 py-1 rounded shadow-md">
+              <span className="text-xs text-gray-400 mr-2">{lineCount} lines, {charCount} chars</span>
+              <button
+                type="button"
                       className={`text-xs px-2 py-1 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${copied ? 'bg-green-700 text-white' : 'bg-gray-700 text-gray-200 hover:bg-blue-700 hover:text-white cursor-pointer'}`}
-                      onClick={handleCopy}
-                      aria-label="Copy code to clipboard"
+                onClick={handleCopy}
+                aria-label="Copy code to clipboard"
                       style={{ cursor: 'pointer' }}
-                    >
-                      {copied ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                  {/* Resizer handle */}
-                  <div
-                    className="absolute bottom-1 right-1 w-4 h-4 cursor-ns-resize z-20"
-                    style={{ userSelect: 'none' }}
-                    onMouseDown={handleResizeStart}
-                    aria-label="Resize editor"
-                    tabIndex={0}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14h12M6 10h8M10 6h4" stroke="#888" strokeWidth="2" strokeLinecap="round"/></svg>
-                  </div>
-                </div>
-              </div>
+              >
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            {/* Resizer handle */}
+            <div
+              className="absolute bottom-1 right-1 w-4 h-4 cursor-ns-resize z-20"
+              style={{ userSelect: 'none' }}
+              onMouseDown={handleResizeStart}
+              aria-label="Resize editor"
+              tabIndex={0}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14h12M6 10h8M10 6h4" stroke="#888" strokeWidth="2" strokeLinecap="round"/></svg>
+            </div>
+          </div>
+        </div>
               {/* Submission & Feedback */}
               <div className="flex gap-4 mt-6 mb-6 justify-center">
-                <button
+          <button
                   className="bg-blue-700 text-white px-8 py-2 rounded-full font-bold shadow-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base transition-all"
-                  onClick={handleSubmit}
+            onClick={handleSubmit}
                   style={{ cursor: 'pointer' }}
-                >
-                  Submit
-                </button>
-                <button
+          >
+            Submit
+          </button>
+          <button
                   className="bg-gray-700 text-gray-100 px-8 py-2 rounded-full font-bold shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 text-base transition-all"
                   onClick={() => {
                     const { code, explanation } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
@@ -528,9 +525,9 @@ export default function PracticePage() {
                     setFeedback(explanation);
                   }}
                   style={{ cursor: 'pointer' }}
-                >
-                  Show Answer
-                </button>
+          >
+            Show Answer
+          </button>
               </div>
               {/* Feedback */}
               <motion.div
@@ -558,7 +555,11 @@ export default function PracticePage() {
               <Accordion.Item value="ai-answer-code">
                 <Accordion.Header>
                   <Accordion.Trigger className="w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
-                    <span>Show AI Answer (SQL)</span>
+                    <span className="flex items-center gap-2">
+                      {/* Sparkle/AI icon */}
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-blue-900 dark:text-blue-200"><path d="M11 2.5l1.5 4.5 4.5 1.5-4.5 1.5-1.5 4.5-1.5-4.5-4.5-1.5 4.5-1.5L11 2.5z" fill="currentColor"/><circle cx="11" cy="11" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.1"/></svg>
+                      Show AI Answer (SQL)
+                    </span>
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6"/></svg>
                   </Accordion.Trigger>
                 </Accordion.Header>
@@ -572,7 +573,7 @@ export default function PracticePage() {
                         </pre>
                         <Tooltip.Root delayDuration={100}>
                           <Tooltip.Trigger asChild>
-                            <button
+          <button
                               className={`absolute top-2 right-2 flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-gray-200 dark:hover:bg-gray-700 z-10`}
                               onClick={() => {
                                 navigator.clipboard.writeText(code);
@@ -587,7 +588,7 @@ export default function PracticePage() {
                               ) : (
                                 <ClipboardIcon className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                               )}
-                            </button>
+          </button>
                           </Tooltip.Trigger>
                           <Tooltip.Portal>
                             <Tooltip.Content side="left" className="z-50 px-3 py-2 rounded bg-gray-900 text-white text-xs shadow-lg border border-gray-700">
@@ -605,25 +606,41 @@ export default function PracticePage() {
               <Accordion.Item value="ai-answer-explanation">
                 <Accordion.Header>
                   <Accordion.Trigger className="w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
-                    <span>Explain Code</span>
+                    <span className="flex items-center gap-2">
+                      {/* Modern lightbulb icon */}
+                      <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2v2m6.364 1.636l-1.414 1.414M22 12h-2M19.364 19.364l-1.414-1.414M12 22v-2M4.636 19.364l1.414-1.414M2 12h2M4.636 4.636l1.414 1.414" /><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" fill="#fefcbf" /></svg>
+                      Explain Code
+                    </span>
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6"/></svg>
                   </Accordion.Trigger>
                 </Accordion.Header>
                 <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-                  <div className="prose dark:prose-invert max-w-none text-base leading-relaxed">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeHighlight]}
-                      components={{
-                        code: (props: { inline?: boolean; children?: ReactNode }) =>
-                          props.inline
-                            ? <strong className="text-blue-700 dark:text-blue-300 font-semibold">{props.children}</strong>
-                            : <code>{props.children}</code>
-                      }}
-                    >
-                      {extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '').explanation}
-                    </ReactMarkdown>
-                  </div>
+                  {(() => {
+                    const { explanation } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
+                    const modelExplanation = explanation;
+                    return (
+                      <div
+                        className="prose prose-sm dark:prose-invert max-w-none text-base leading-relaxed bg-white dark:bg-green-950 rounded-lg p-4 border border-green-100 dark:border-green-800"
+                        style={{
+                          '--tw-prose-code': '#374151',
+                          '--tw-prose-pre-bg': '#f3f4f6',
+                        } as React.CSSProperties}
+                      >
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeHighlight]}
+                          components={{
+                            code: (props: { inline?: boolean; children?: ReactNode }) =>
+                              props.inline
+                                ? <code className="bg-gray-200 dark:bg-gray-800 text-blue-700 dark:text-blue-300 rounded px-2 py-0.5 font-mono text-[0.97em]">{props.children}</code>
+                                : <code>{props.children}</code>
+                          }}
+                        >
+                          {modelExplanation}
+                        </ReactMarkdown>
+                      </div>
+                    );
+                  })()}
                 </Accordion.Content>
               </Accordion.Item>
             </Accordion.Root>
