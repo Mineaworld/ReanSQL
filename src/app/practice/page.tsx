@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import CodeMirror from '@uiw/react-codemirror';
-import * as Tabs from '@radix-ui/react-tabs';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckIcon, XCircleIcon, MinusCircleIcon } from '@heroicons/react/24/solid';
@@ -15,6 +14,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import * as Accordion from '@radix-ui/react-accordion';
 
 // Define the Question type for type safety
 interface Question {
@@ -231,6 +231,12 @@ export default function PracticePage() {
     setUploading(false);
   };
 
+  // Accordion open state for right panel (must be before early returns)
+  const [openAccordions, setOpenAccordions] = useState<string[]>([]);
+  useEffect(() => {
+    setOpenAccordions([]); // Close all accordions when question changes
+  }, [currentIdx]);
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen bg-black"><div className="p-6 text-center bg-gray-900 text-gray-100 rounded shadow">Loading...</div></div>;
   }
@@ -267,33 +273,6 @@ export default function PracticePage() {
   }
 
   const question = questions[currentIdx];
-
-  // Custom CodeBlock renderer for markdown
-  const CodeBlock = ({ inline, className, children, ...props }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
-    const code = Array.isArray(children) ? children.join('') : String(children);
-    // Only show copy button for multi-line code blocks
-    if (!inline) {
-      return (
-        <div className="relative group my-4">
-          <pre className={`rounded bg-gray-100 dark:bg-gray-800 p-4 overflow-x-auto text-sm font-mono ${className || ''}`}> 
-            <code {...props}>{children}</code>
-          </pre>
-          <button
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded hover:bg-blue-700 hover:text-white text-xs flex items-center gap-1 cursor-pointer transition-opacity"
-            onClick={() => navigator.clipboard.writeText(code)}
-            aria-label="Copy code"
-            style={{ cursor: 'pointer' }}
-          >
-            <ClipboardIcon className="h-4 w-4" /> Copy
-          </button>
-        </div>
-      );
-    }
-    // Style inline code as bold blue text, no copy button
-    return (
-      <strong className="text-blue-700 dark:text-blue-300 font-semibold" {...props}>{children}</strong>
-    );
-  };
 
   // Helper to extract first code block and explanation from markdown
   function extractFirstCodeBlock(markdown: string) {
@@ -399,8 +378,9 @@ export default function PracticePage() {
         </aside>
         {/* Main + AI Panel */}
         <div className="flex flex-1 h-full overflow-auto">
-          {/* Main Content Area */}
-          <main className="flex-1 flex flex-col p-4">
+          {/* Ensure right panel doesn't expand with content */}
+          {/* Add min-w-0 to both parent and aside for flexbox truncation */}
+          <main className="flex-1 flex flex-col p-4 min-w-0 max-w-full">
             {/* Toolbar */}
             <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
               <button onClick={handleFormat} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-blue-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>Format SQL</button>
@@ -442,7 +422,7 @@ export default function PracticePage() {
                   Write your SQL here
                 </label>
                 <div
-                  className="relative rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 shadow-xl focus-within:border-blue-500 transition-all duration-200"
+                  className="relative rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 shadow-xl focus-within:border-blue-500 transition-all duration-200 min-w-0 max-w-full overflow-x-auto"
                   style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' }}
                 >
                   <CodeMirror
@@ -460,6 +440,8 @@ export default function PracticePage() {
                       borderRadius: '0.5rem',
                       padding: '0.75rem 1rem',
                       minHeight: '120px',
+                      maxWidth: '100%',
+                      overflowX: 'auto',
                     }}
                   />
                   {/* Toolbar below editor */}
@@ -522,89 +504,87 @@ export default function PracticePage() {
               </motion.div>
             </div>
           </main>
-          {/* Right Panel: AI Answer/Explanation Tabs */}
-          <aside className="w-[350px] max-w-sm min-w-[260px] border-l border-gray-200 dark:border-gray-800 bg-blue-50 dark:bg-blue-900 p-0 flex flex-col">
-            {/* Tab Bar */}
-            <Tabs.Root defaultValue="ai-answer" className="flex-1 flex flex-col">
-              <Tabs.List className="flex border-b border-gray-200 dark:border-gray-700 bg-blue-100 dark:bg-blue-950">
-                <Tabs.Trigger value="ai-answer" className="flex-1 px-4 py-2 font-semibold text-sm text-blue-900 dark:text-blue-200 data-[state=active]:bg-white data-[state=active]:dark:bg-blue-900 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 transition-colors focus:outline-none">AI Answer</Tabs.Trigger>
-                <Tabs.Trigger value="step-by-step" className="flex-1 px-4 py-2 font-semibold text-sm text-blue-900 dark:text-blue-200 data-[state=active]:bg-white data-[state=active]:dark:bg-blue-900 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 transition-colors focus:outline-none">Step-by-Step</Tabs.Trigger>
-                <Tabs.Trigger value="simple" className="flex-1 px-4 py-2 font-semibold text-sm text-blue-900 dark:text-blue-200 data-[state=active]:bg-white data-[state=active]:dark:bg-blue-900 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 transition-colors focus:outline-none">Simple</Tabs.Trigger>
-                <Tabs.Trigger value="question" className="flex-1 px-4 py-2 font-semibold text-sm text-blue-900 dark:text-blue-200 data-[state=active]:bg-white data-[state=active]:dark:bg-blue-900 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 transition-colors focus:outline-none">Question</Tabs.Trigger>
-              </Tabs.List>
-              {/* Tab Content */}
-              <Tabs.Content value="ai-answer" className="flex-1 p-4">
-                {/* AI Answer code block and explanation */}
-                {(() => {
-                  const { code, explanation } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
-                  return (
-                    <>
-                      {code && (
-                        <div className="relative group my-4">
-                          <pre className="rounded-2xl bg-[#f7fafc] dark:bg-[#18181b] p-4 overflow-x-auto text-base font-mono shadow-lg border border-gray-200 dark:border-gray-700">
-                            <code>{code}</code>
-                          </pre>
-                          <button
-                            className="absolute top-2 right-2 bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-all text-xs font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-400 z-10"
-                            onClick={() => navigator.clipboard.writeText(code)}
-                            aria-label="Copy SQL code"
-                            style={{ cursor: 'pointer' }}
-                          >
-                            Copy
-                          </button>
-                        </div>
-                      )}
-                      <div className="prose dark:prose-invert max-w-none text-base leading-relaxed">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeHighlight]}
-                          components={{
-                            code: (props: { inline?: boolean; children?: ReactNode }) =>
-                              props.inline
-                                ? <strong className="text-blue-700 dark:text-blue-300 font-semibold">{props.children}</strong>
-                                : <code>{props.children}</code>
-                          }}
-                        >
-                          {explanation}
-                        </ReactMarkdown>
+          {/* Right Panel: AI Answer/Explanation Accordions */}
+          <aside className="w-[350px] max-w-sm min-w-[260px] min-w-0 border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-4 flex flex-col">
+            <Accordion.Root
+              type="multiple"
+              className="flex flex-col gap-2"
+              value={openAccordions}
+              onValueChange={setOpenAccordions}
+            >
+              {/* AI Answer (SQL) */}
+              <Accordion.Item value="ai-answer-code">
+                <Accordion.Header>
+                  <Accordion.Trigger className="w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <span>Show AI Answer (SQL)</span>
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6"/></svg>
+                  </Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                  {(() => {
+                    const { code } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
+                    return code ? (
+                      <div className="relative group my-4">
+                        <pre className="rounded-2xl bg-[#f7fafc] dark:bg-[#18181b] p-4 overflow-x-auto max-w-full text-base font-mono shadow-lg border border-gray-200 dark:border-gray-700">
+                          <code className="block min-w-0 max-w-full overflow-x-auto">{code}</code>
+                        </pre>
+                        <Tooltip.Root delayDuration={100}>
+                          <Tooltip.Trigger asChild>
+                            <button
+                              className={`absolute top-2 right-2 flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-gray-200 dark:hover:bg-gray-700 z-10`}
+                              onClick={() => {
+                                navigator.clipboard.writeText(code);
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 1200);
+                              }}
+                              aria-label="Copy SQL code"
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {copied ? (
+                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                              ) : (
+                                <ClipboardIcon className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                              )}
+                            </button>
+                          </Tooltip.Trigger>
+                          <Tooltip.Portal>
+                            <Tooltip.Content side="left" className="z-50 px-3 py-2 rounded bg-gray-900 text-white text-xs shadow-lg border border-gray-700">
+                              {copied ? 'Copied!' : 'Copy to clipboard'}
+                              <Tooltip.Arrow className="fill-gray-900" />
+                            </Tooltip.Content>
+                          </Tooltip.Portal>
+                        </Tooltip.Root>
                       </div>
-                    </>
-                  );
-                })()}
-              </Tabs.Content>
-              <Tabs.Content value="step-by-step" className="flex-1 p-4">
-                <div className="prose dark:prose-invert max-w-none text-base leading-relaxed">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeHighlight]}
-                    components={{ code: CodeBlock }}
-                  >
-                    {question.explanation || ''}
-                  </ReactMarkdown>
-                </div>
-              </Tabs.Content>
-              <Tabs.Content value="simple" className="flex-1 p-4">
-                <div className="prose dark:prose-invert max-w-none text-base leading-relaxed">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeHighlight]}
-                    components={{ code: CodeBlock }}
-                  >
-                    {question.explanation || ''}
-                  </ReactMarkdown>
-                </div>
-              </Tabs.Content>
-              <Tabs.Content value="question" className="flex-1 p-4">
-                <div className="prose dark:prose-invert max-w-none text-base leading-relaxed">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeHighlight]}
-                  >
-                    {question.questionText || question.question_text || ''}
-                  </ReactMarkdown>
-                </div>
-              </Tabs.Content>
-            </Tabs.Root>
+                    ) : null;
+                  })()}
+                </Accordion.Content>
+              </Accordion.Item>
+              {/* Explain Code */}
+              <Accordion.Item value="ai-answer-explanation">
+                <Accordion.Header>
+                  <Accordion.Trigger className="w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <span>Explain Code</span>
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6"/></svg>
+                  </Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                  <div className="prose dark:prose-invert max-w-none text-base leading-relaxed">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeHighlight]}
+                      components={{
+                        code: (props: { inline?: boolean; children?: ReactNode }) =>
+                          props.inline
+                            ? <strong className="text-blue-700 dark:text-blue-300 font-semibold">{props.children}</strong>
+                            : <code>{props.children}</code>
+                      }}
+                    >
+                      {extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '').explanation}
+                    </ReactMarkdown>
+                  </div>
+                </Accordion.Content>
+              </Accordion.Item>
+            </Accordion.Root>
           </aside>
         </div>
       </div>
