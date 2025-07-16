@@ -31,7 +31,6 @@ export default function PracticePage() {
   const [loading, setLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userCode, setUserCode] = useState('');
-  const [feedback, setFeedback] = useState('');
   // --- Add for copy functionality and line/char count ---
   const [copied, setCopied] = useState(false);
   const lineCount = userCode.split('\n').length;
@@ -160,32 +159,27 @@ export default function PracticePage() {
     console.log('User SQL (normalized):', userNorm);
     console.log('AI SQL (normalized):', aiNorm);
     if (userNorm === aiNorm) {
-      setFeedback('Correct! 🎉');
       setQuestionStatus((prev) => ({ ...prev, [currentIdx]: 'correct' }));
     } else {
-      setFeedback('Incorrect, try again!');
       setQuestionStatus((prev) => ({ ...prev, [currentIdx]: 'incorrect' }));
     }
   };
 
   // Reset feedback on question change or code edit
-  useEffect(() => { setFeedback(''); }, [currentIdx]);
-  useEffect(() => { setFeedback(''); }, [userCode]);
+  useEffect(() => { }, [currentIdx]);
+  useEffect(() => { }, [userCode]);
 
   const handleNext = () => {
-    setFeedback('');
     setUserCode('');
     setCurrentIdx((idx) => (idx + 1) % questions.length);
   };
 
   // --- New: Question navigation ---
   const handlePrev = () => {
-    setFeedback('');
     setUserCode('');
     setCurrentIdx((idx) => (idx - 1 + questions.length) % questions.length);
   };
   const handleJump = (idx: number) => {
-    setFeedback('');
     setUserCode('');
     setCurrentIdx(idx);
   };
@@ -197,7 +191,6 @@ export default function PracticePage() {
     setQuestions([]);
     setCurrentIdx(0);
     setUserCode('');
-    setFeedback('');
     setQuestionStatus({}); // Clear status when uploading new questions
     const formData = new FormData();
     formData.append('file', file);
@@ -387,19 +380,21 @@ export default function PracticePage() {
             })}
           </div>
           {/* Sidebar: Pin navigation buttons to bottom */}
-          <div className="mt-auto flex gap-3 pt-4">
+          <div className="mt-auto flex gap-3 pt-4 mb-6">
             <button
               onClick={handlePrev}
-              className="flex-1 bg-gray-700 text-gray-100 px-6 py-2 rounded-full font-bold shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all"
+              className="flex-1 flex items-center gap-2 bg-gray-700 text-gray-100 px-6 py-2 rounded-full font-bold shadow-md hover:bg-gray-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all"
               style={{ cursor: 'pointer' }}
             >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Previous
             </button>
             <button
               onClick={handleNext}
-              className="flex-1 bg-blue-700 text-white px-6 py-2 rounded-full font-bold shadow-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+              className="flex-1 flex items-center gap-2 bg-blue-700 text-white px-6 py-2 rounded-full font-bold shadow-md hover:bg-blue-800 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
               style={{ cursor: 'pointer' }}
             >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Next
             </button>
           </div>
@@ -420,25 +415,31 @@ export default function PracticePage() {
         </div>
             {/* Main Card */}
             <div className="w-full h-full bg-white dark:bg-[#23272f] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-4 relative flex flex-col">
-              {/* Clear Questions Button */}
-              <motion.button
-                className="absolute top-4 right-4 bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 transition-colors text-sm font-semibold shadow focus:outline-none focus:ring-2 focus:ring-red-400 z-10"
-                whileHover={{ scale: 1.07 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => {
-                  localStorage.removeItem('reansql_questions');
-                  localStorage.removeItem('reansql_question_status');
-                  setQuestions([]);
-                  setCurrentIdx(0);
-                  setUserCode('');
-                  setFeedback('');
-                  setQuestionStatus({});
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                Clear Questions / Upload New PDF
-              </motion.button>
-              <h1 className="text-3xl font-extrabold mb-6 text-blue-700 dark:text-blue-300 text-center tracking-tight">Practice Mode</h1>
+              <div className="flex items-center justify-between mb-6">
+  <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 drop-shadow-lg flex items-center gap-3 mx-auto">
+    <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+    Practice Mode
+  </h1>
+  <button
+    className="flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-pink-500 to-yellow-500 text-white font-bold shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-pink-400"
+    onClick={() => {
+      localStorage.removeItem('reansql_questions');
+      localStorage.removeItem('reansql_question_status');
+      setQuestions([]);
+      setCurrentIdx(0);
+      setUserCode('');
+      setQuestionStatus({});
+    }}
+    style={{ cursor: 'pointer' }}
+  >
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4.998V16" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+    Clear / Upload PDF
+  </button>
+</div>
               {/* Question Display */}
         <div className="mb-6">
   <div className="mb-2 flex items-center gap-3">
@@ -509,38 +510,27 @@ export default function PracticePage() {
           </div>
         </div>
               {/* Submission & Feedback */}
-              <div className="flex gap-4 mt-6 mb-6 justify-center">
-          <button
-                  className="bg-blue-700 text-white px-8 py-2 rounded-full font-bold shadow-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base transition-all"
-            onClick={handleSubmit}
+              <div className="flex gap-4 mt-6 mb-10 justify-center">
+                <button
+                  className="flex items-center gap-2 bg-blue-700 text-white px-8 py-2 rounded-full font-bold shadow-md hover:bg-blue-800 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base transition-all"
+                  onClick={handleSubmit}
                   style={{ cursor: 'pointer' }}
-          >
-            Submit
-          </button>
-          <button
-                  className="bg-gray-700 text-gray-100 px-8 py-2 rounded-full font-bold shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 text-base transition-all"
+                >
+                  <span role="img" aria-label="submit">🚀</span>
+                  Submit
+                </button>
+                <button
+                  className="flex items-center gap-2 bg-gray-700 text-gray-100 px-8 py-2 rounded-full font-bold shadow-md hover:bg-gray-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 text-base transition-all"
                   onClick={() => {
-                    const { code, explanation } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
+                    const { code } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
                     setUserCode(code);
-                    setFeedback(explanation);
                   }}
                   style={{ cursor: 'pointer' }}
-          >
-            Show Answer
-          </button>
+                >
+                  <span role="img" aria-label="show answer">✨</span>
+                  Show Answer
+                </button>
               </div>
-              {/* Feedback */}
-              <motion.div
-                className={`mt-4 p-4 rounded-xl text-center font-bold text-lg shadow-md border-2 transition-all
-                  ${feedback.includes('Correct')
-                    ? 'bg-[#e6f9ed] dark:bg-green-900 text-[#15803d] dark:text-green-200 border-green-200 dark:border-green-700'
-                    : 'bg-[#fffbe6] dark:bg-yellow-900 text-[#b45309] dark:text-yellow-200 border-yellow-200 dark:border-yellow-700'}`}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              >
-                {feedback}
-              </motion.div>
             </div>
           </main>
           {/* Right Panel: AI Answer/Explanation Accordions */}
