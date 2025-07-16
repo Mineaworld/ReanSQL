@@ -154,6 +154,7 @@ The SQL Practice Web App is an interactive learning platform that allows users t
 ### AI Integration
 - **Provider**: OpenAI API (GPT-4 or GPT-3.5-turbo)
 - **Cost Management**: Intelligent API usage to minimize costs
+- **API Key Failover**: Supports multiple Gemini API keys for AI integration. If a request hits a rate limit or quota on one key, the system automatically retries with the next available key, ensuring uninterrupted AI-powered features for users on the free tier.
 
 ### Hosting & Deployment
 - **Frontend**: Vercel for Next.js deployment
