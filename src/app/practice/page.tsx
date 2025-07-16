@@ -9,6 +9,7 @@ import { CheckCircleIcon as CheckIcon, XCircleIcon, MinusCircleIcon } from '@her
 import { sql } from '@codemirror/lang-sql';
 
 import { dracula } from '@uiw/codemirror-theme-dracula';
+import { githubLight } from '@uiw/codemirror-theme-github';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -91,7 +92,7 @@ export default function PracticePage() {
   const handleFullScreenToggle = () => setIsFullScreen((v) => !v);
 
   // --- Editor theme ---
-  const editorTheme = theme === 'dark' ? dracula : undefined;
+  const editorTheme = theme === 'dark' ? dracula : githubLight;
 
   // --- Resizable ---
   const [editorHeight, setEditorHeight] = useState(300);
@@ -404,87 +405,110 @@ export default function PracticePage() {
           {/* Ensure right panel doesn't expand with content */}
           {/* Add min-w-0 to both parent and aside for flexbox truncation */}
           <main className="flex-1 flex flex-col p-4 min-w-0 max-w-full">
-        {/* Toolbar */}
+            {/* Practice Mode Heading and Clear/Upload Button (moved above toolbar) */}
+            <div className="relative mb-6">
+              <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 drop-shadow-lg flex items-center gap-3 justify-center">
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Practice Mode
+              </h1>
+              <button
+                className="absolute top-0 right-0 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-yellow-500 text-white font-bold shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-pink-400 text-sm"
+                onClick={() => {
+                  localStorage.removeItem('reansql_questions');
+                  localStorage.removeItem('reansql_question_status');
+                  setQuestions([]);
+                  setCurrentIdx(0);
+                  setUserCode('');
+                  setQuestionStatus({});
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4.998V16" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Clear / Upload PDF
+              </button>
+            </div>
+            {/* Question Display */}
+            <div className="mb-6">
+              <div className="mb-2 flex items-center gap-3">
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-bold text-sm shadow">Q{currentIdx + 1}</span>
+                <span className="text-xl font-semibold text-[#22223b] dark:text-gray-200">Practice Question</span>
+              </div>
+              <div className="mb-2 text-sm text-blue-600 dark:text-blue-300 flex items-center gap-2">
+                <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2v2m6.364 1.636l-1.414 1.414M22 12h-2M19.364 19.364l-1.414-1.414M12 22v-2M4.636 19.364l1.414-1.414M2 12h2M4.636 4.636l1.414 1.414" /><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" fill="#fefcbf" /></svg>
+                Read the question carefully and write your SQL below!
+              </div>
+              <div className="bg-[#f5f7fa] dark:bg-[#23272f] rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <p className="text-lg text-[#22223b] dark:text-gray-100 leading-relaxed whitespace-pre-line">
+                  {question.questionText || question.question_text || ''}
+                </p>
+              </div>
+            </div>
+            {/* Code Editor Label */}
+            <label className="block text-base font-semibold text-blue-700 dark:text-blue-200 mb-2" htmlFor="sql-editor">
+              Write your SQL here
+            </label>
+            {/* Toolbar (moved above code editor) */}
             <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
-              <button onClick={handleFormat} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-blue-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>Format SQL</button>
-              <button onClick={handleReset} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-yellow-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>Reset</button>
-              <button onClick={handleDownload} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-green-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>Download</button>
-              <button onClick={handleThemeToggle} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 hover:text-black text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</button>
-              <button onClick={handleFullScreenToggle} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-purple-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>{isFullScreen ? 'Exit Full Screen' : 'Full Screen'}</button>
+              <button onClick={handleFormat} className="flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-blue-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round"/><rect x="9" y="4" width="6" height="16" rx="2"/></svg>
+                Format SQL
+              </button>
+              <button onClick={handleReset} className="flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-yellow-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4V1m0 22v-3m8-7h3M1 12h3m15.364-7.364l2.121-2.121M4.222 19.778l-2.121 2.121M19.778 19.778l2.121 2.121M4.222 4.222L2.101 2.101"/><circle cx="12" cy="12" r="7"/></svg>
+                Reset
+              </button>
+              <button onClick={handleDownload} className="flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-green-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                Download
+              </button>
+              <button onClick={handleThemeToggle} className="flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 hover:text-black text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>
+                {theme === 'dark' ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                )}
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </button>
+              <button onClick={handleFullScreenToggle} className="flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-purple-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>
+                {isFullScreen ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 9h-6v6h6V9zm6 0h6v6h-6V9z"/></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h7V2H2v9h2V4zm16 0v7h2V2h-9v2h7zm0 16h-7v2h9v-9h-2v7zm-16 0v-7H2v9h9v-2H4z"/></svg>
+                )}
+                {isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
+              </button>
               {/* Future UX buttons can go here */}
-        </div>
-            {/* Main Card */}
-            <div className="w-full h-full bg-white dark:bg-[#23272f] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-4 relative flex flex-col">
-              <div className="flex items-center justify-between mb-6">
-  <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 drop-shadow-lg flex items-center gap-3 mx-auto">
-    <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-    Practice Mode
-  </h1>
-  <button
-    className="flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-pink-500 to-yellow-500 text-white font-bold shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-pink-400"
-    onClick={() => {
-      localStorage.removeItem('reansql_questions');
-      localStorage.removeItem('reansql_question_status');
-      setQuestions([]);
-      setCurrentIdx(0);
-      setUserCode('');
-      setQuestionStatus({});
-    }}
-    style={{ cursor: 'pointer' }}
-  >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4.998V16" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-    Clear / Upload PDF
-  </button>
-</div>
-              {/* Question Display */}
-        <div className="mb-6">
-  <div className="mb-2 flex items-center gap-3">
-    <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-bold text-sm shadow">Q{currentIdx + 1}</span>
-    <span className="text-xl font-semibold text-[#22223b] dark:text-gray-200">Practice Question</span>
-  </div>
-  <div className="mb-2 text-sm text-blue-600 dark:text-blue-300 flex items-center gap-2">
-    <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2v2m6.364 1.636l-1.414 1.414M22 12h-2M19.364 19.364l-1.414-1.414M12 22v-2M4.636 19.364l1.414-1.414M2 12h2M4.636 4.636l1.414 1.414" /><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" fill="#fefcbf" /></svg>
-    Read the question carefully and write your SQL below!
-  </div>
-  <div className="bg-[#f5f7fa] dark:bg-[#23272f] rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-    <p className="text-lg text-[#22223b] dark:text-gray-100 leading-relaxed whitespace-pre-line">
-      {question.questionText || question.question_text || ''}
-    </p>
-  </div>
-</div>
-              {/* Code Editor */}
-        <div className="mb-4">
-                <label className="block text-base font-semibold text-blue-700 dark:text-blue-200 mb-2" htmlFor="sql-editor">
-            Write your SQL here
-          </label>
-          <div
+            </div>
+            {/* Code Editor */}
+            <div className="mb-4">
+                <div
                   className="relative rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 shadow-xl focus-within:border-blue-500 transition-all duration-200 min-w-0 max-w-full overflow-x-auto"
                   style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' }}
-          >
-            <CodeMirror
-              id="sql-editor"
-              value={userCode}
-              height={`${editorHeight}px`}
-              theme={editorTheme}
-              extensions={[sql()]}
-              onChange={(value: string) => setUserCode(value)}
-              basicSetup={{ lineNumbers: true, autocompletion: true }}
-              style={{
-                fontSize: '1.15rem',
-                fontFamily: 'Fira Mono, Menlo, Monaco, Consolas, monospace',
-                background: 'transparent',
-                borderRadius: '0.5rem',
-                padding: '0.75rem 1rem',
-                minHeight: '120px',
+            >
+              <CodeMirror
+                id="sql-editor"
+                value={userCode}
+                height={`${editorHeight}px`}
+                theme={editorTheme}
+                extensions={[sql()]}
+                onChange={(value: string) => setUserCode(value)}
+                basicSetup={{ lineNumbers: true, autocompletion: true }}
+                style={{
+                  fontSize: '1.15rem',
+                  fontFamily: 'Fira Mono, Menlo, Monaco, Consolas, monospace',
+                  background: 'transparent',
+                  borderRadius: '0.5rem',
+                  padding: '0.75rem 1rem',
+                  minHeight: '120px',
                       maxWidth: '100%',
                       overflowX: 'auto',
-              }}
-            />
-                  {/* Toolbar below editor */}
+                }}
+              />
+                {/* Toolbar below editor */}
             <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-gray-900 bg-opacity-80 px-2 py-1 rounded shadow-md">
               <span className="text-xs text-gray-400 mr-2">{lineCount} lines, {charCount} chars</span>
               <button
@@ -509,28 +533,27 @@ export default function PracticePage() {
             </div>
           </div>
         </div>
-              {/* Submission & Feedback */}
-              <div className="flex gap-4 mt-6 mb-10 justify-center">
-                <button
-                  className="flex items-center gap-2 bg-blue-700 text-white px-8 py-2 rounded-full font-bold shadow-md hover:bg-blue-800 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base transition-all"
-                  onClick={handleSubmit}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <span role="img" aria-label="submit">🚀</span>
-                  Submit
-                </button>
-                <button
-                  className="flex items-center gap-2 bg-gray-700 text-gray-100 px-8 py-2 rounded-full font-bold shadow-md hover:bg-gray-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 text-base transition-all"
-                  onClick={() => {
-                    const { code } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
-                    setUserCode(code);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <span role="img" aria-label="show answer">✨</span>
-                  Show Answer
-                </button>
-              </div>
+            {/* Submission & Feedback */}
+            <div className="flex gap-4 mt-6 mb-10 justify-center">
+              <button
+                className="flex items-center gap-2 bg-blue-700 text-white px-8 py-2 rounded-full font-bold shadow-md hover:bg-blue-800 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base transition-all"
+                onClick={handleSubmit}
+                style={{ cursor: 'pointer' }}
+              >
+                <span role="img" aria-label="submit">🚀</span>
+                Submit
+              </button>
+              <button
+                className="flex items-center gap-2 bg-gray-700 text-gray-100 px-8 py-2 rounded-full font-bold shadow-md hover:bg-gray-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 text-base transition-all"
+                onClick={() => {
+                  const { code } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
+                  setUserCode(code);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <span role="img" aria-label="show answer">✨</span>
+                Show Answer
+              </button>
             </div>
           </main>
           {/* Right Panel: AI Answer/Explanation Accordions */}
