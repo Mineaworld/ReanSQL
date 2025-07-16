@@ -237,6 +237,17 @@ export default function PracticePage() {
     setOpenAccordions([]); // Close all accordions when question changes
   }, [currentIdx]);
 
+  // Congratulatory modal state
+  const [showCongrats, setShowCongrats] = useState(false);
+  useEffect(() => {
+    if (
+      questions.length > 0 &&
+      Object.values(questionStatus).filter((s) => s === 'correct').length === questions.length
+    ) {
+      setShowCongrats(true);
+    }
+  }, [questionStatus, questions.length]);
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen bg-black"><div className="p-6 text-center bg-gray-900 text-gray-100 rounded shadow">Loading...</div></div>;
   }
@@ -291,6 +302,37 @@ export default function PracticePage() {
 
   return (
     <Tooltip.Provider>
+      {/* Congratulatory Modal */}
+      {showCongrats && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur backdrop-brightness-75"
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border-2 border-green-300 dark:border-green-700 p-10 flex flex-col items-center max-w-md w-full mx-4 relative">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl font-bold focus:outline-none"
+              onClick={() => setShowCongrats(false)}
+              aria-label="Close congratulatory modal"
+            >
+              &times;
+            </button>
+            <div className="text-6xl mb-4 animate-bounce">🎉</div>
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" fill="#bbf7d0" /><path strokeLinecap="round" strokeLinejoin="round" d="M7 13l3 3 7-7" stroke="#16a34a" strokeWidth="2.5" /></svg>
+              <span className="text-2xl font-bold text-green-800 dark:text-green-200">Congratulations!</span>
+            </div>
+            <div className="text-lg text-gray-700 dark:text-gray-100 mb-4 text-center">You’ve answered all questions correctly.<br/>Keep practicing to master your SQL skills!</div>
+            <button
+              className="mt-2 px-6 py-2 rounded-full bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-all text-lg"
+              onClick={() => setShowCongrats(false)}
+            >
+              Close
+            </button>
+          </div>
+        </motion.div>
+      )}
       <div className="flex h-[calc(100vh-4rem)] bg-[#f7fafc] dark:bg-[#18181b]">
         {/* Sidebar: Questions/Progress */}
         <aside className="w-72 min-w-[220px] max-w-xs border-r border-gray-200 dark:border-gray-800 bg-[#23272f] dark:bg-[#18181b] flex flex-col h-full p-4">
