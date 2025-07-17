@@ -430,9 +430,9 @@ export default function PracticePage() {
                 </svg>
                 Clear / Upload PDF
               </button>
-            </div>
+        </div>
             {/* Question Display */}
-            <div className="mb-6">
+        <div className="mb-6">
               <div className="mb-2 flex items-center gap-3">
                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-bold text-sm shadow">Q{currentIdx + 1}</span>
                 <span className="text-xl font-semibold text-[#22223b] dark:text-gray-200">Practice Question</span>
@@ -446,11 +446,11 @@ export default function PracticePage() {
                   {question.questionText || question.question_text || ''}
                 </p>
               </div>
-            </div>
+        </div>
             {/* Code Editor Label */}
             <label className="block text-base font-semibold text-blue-700 dark:text-blue-200 mb-2" htmlFor="sql-editor">
-              Write your SQL here
-            </label>
+            Write your SQL here
+          </label>
             {/* Toolbar (moved above code editor) */}
             <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
               <button onClick={handleFormat} className="flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-blue-700 hover:text-white text-xs font-semibold transition-all shadow-sm" style={{ cursor: 'pointer' }}>
@@ -488,26 +488,26 @@ export default function PracticePage() {
                 <div
                   className="relative rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 shadow-xl focus-within:border-blue-500 transition-all duration-200 min-w-0 max-w-full overflow-x-auto"
                   style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' }}
-            >
-              <CodeMirror
-                id="sql-editor"
-                value={userCode}
-                height={`${editorHeight}px`}
-                theme={editorTheme}
-                extensions={[sql()]}
-                onChange={(value: string) => setUserCode(value)}
-                basicSetup={{ lineNumbers: true, autocompletion: true }}
-                style={{
-                  fontSize: '1.15rem',
-                  fontFamily: 'Fira Mono, Menlo, Monaco, Consolas, monospace',
-                  background: 'transparent',
-                  borderRadius: '0.5rem',
-                  padding: '0.75rem 1rem',
-                  minHeight: '120px',
+          >
+            <CodeMirror
+              id="sql-editor"
+              value={userCode}
+              height={`${editorHeight}px`}
+              theme={editorTheme}
+              extensions={[sql()]}
+              onChange={(value: string) => setUserCode(value)}
+              basicSetup={{ lineNumbers: true, autocompletion: true }}
+              style={{
+                fontSize: '1.15rem',
+                fontFamily: 'Fira Mono, Menlo, Monaco, Consolas, monospace',
+                background: 'transparent',
+                borderRadius: '0.5rem',
+                padding: '0.75rem 1rem',
+                minHeight: '120px',
                       maxWidth: '100%',
                       overflowX: 'auto',
-                }}
-              />
+              }}
+            />
                 {/* Toolbar below editor */}
             <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-gray-900 bg-opacity-80 px-2 py-1 rounded shadow-md">
               <span className="text-xs text-gray-400 mr-2">{lineCount} lines, {charCount} chars</span>
@@ -535,15 +535,15 @@ export default function PracticePage() {
         </div>
             {/* Submission & Feedback */}
             <div className="flex gap-4 mt-6 mb-10 justify-center">
-              <button
+          <button
                 className="flex items-center gap-2 bg-blue-700 text-white px-8 py-2 rounded-full font-bold shadow-md hover:bg-blue-800 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base transition-all"
-                onClick={handleSubmit}
+            onClick={handleSubmit}
                 style={{ cursor: 'pointer' }}
-              >
+          >
                 <span role="img" aria-label="submit">🚀</span>
-                Submit
-              </button>
-              <button
+            Submit
+          </button>
+          <button
                 className="flex items-center gap-2 bg-gray-700 text-gray-100 px-8 py-2 rounded-full font-bold shadow-md hover:bg-gray-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 text-base transition-all"
                 onClick={() => {
                   const { code } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
@@ -552,8 +552,8 @@ export default function PracticePage() {
                 style={{ cursor: 'pointer' }}
               >
                 <span role="img" aria-label="show answer">✨</span>
-                Show Answer
-              </button>
+            Show Answer
+          </button>
             </div>
           </main>
           {/* Right Panel: AI Answer/Explanation Accordions */}
@@ -618,7 +618,7 @@ export default function PracticePage() {
               {/* Explain Code */}
               <Accordion.Item value="ai-answer-explanation">
                 <Accordion.Header>
-                  <Accordion.Trigger className="w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
+                  <Accordion.Trigger className="w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 z-10 sticky top-0 border-b border-green-300 dark:border-green-800">
                     <span className="flex items-center gap-2">
                       {/* Modern lightbulb icon */}
                       <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2v2m6.364 1.636l-1.414 1.414M22 12h-2M19.364 19.364l-1.414-1.414M12 22v-2M4.636 19.364l1.414-1.414M2 12h2M4.636 4.636l1.414 1.414" /><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" fill="#fefcbf" /></svg>
@@ -627,13 +627,13 @@ export default function PracticePage() {
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6"/></svg>
                   </Accordion.Trigger>
                 </Accordion.Header>
-                <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                <Accordion.Content className="explain-accordion-content overflow-auto transition-all duration-300 data-[state=open]:max-h-[800px] data-[state=closed]:max-h-0 p-0">
                   {(() => {
                     const { explanation } = extractFirstCodeBlock(question.aiAnswer || question.ai_answer || '');
                     const modelExplanation = explanation;
                     return (
                       <div
-                        className="prose prose-sm dark:prose-invert max-w-none text-base leading-relaxed bg-white dark:bg-green-950 rounded-lg p-4 border border-green-100 dark:border-green-800"
+                        className="prose prose-sm dark:prose-invert w-full max-w-full overflow-x-auto text-base leading-relaxed bg-white dark:bg-green-950 rounded-lg p-4 border border-green-100 dark:border-green-800 mt-2 mb-2"
                         style={{
                           '--tw-prose-code': '#374151',
                           '--tw-prose-pre-bg': '#f3f4f6',
