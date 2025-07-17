@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from 'next/font/google';
+
 import "./globals.css";
 import Link from "next/link";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
 export const metadata: Metadata = {
   title: "ReanSQL - SQL Practice App",
@@ -27,10 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
-      >
+    <html lang="en" className={`${inter.variable} ${jetbrains.variable} h-full`}>
+      <body className="font-sans antialiased h-full">
         <main className="flex min-h-screen flex-col">
           <header className="sticky top-0 z-30 backdrop-blur-lg bg-white/40 dark:bg-[#18181b]/60 border-b border-gray-200 dark:border-gray-800 shadow-md transition-all">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
