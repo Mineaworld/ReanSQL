@@ -87,10 +87,19 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
 
           // Each question call Gemini for answer & explanation then store in DB (parallelized)
           const results = await Promise.all(parsedQuestions.map(async ({ questionText }) => {
-            const [aiAnswer, explanation] = await Promise.all([
+            const [aiAnswerRaw, explanation] = await Promise.all([
               getGeminiContent(questionText, 'answer'),
               getGeminiContent(questionText, 'explanation'),
             ]);
+            // Remove SQL comments from AI answer
+            function stripSqlComments(sql: string) {
+              // Remove multi-line comments
+              const noBlock = sql.replace(/\/\*[\s\S]*?\*\//g, '');
+              // Remove single-line comments
+              const noLine = noBlock.replace(/--.*$/gm, '');
+              return noLine.trim();
+            }
+            const aiAnswer = stripSqlComments(aiAnswerRaw);
             // Store in MongoDB
             const doc = await Question.create({
               pdfSource: 'uploaded',

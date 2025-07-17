@@ -16,6 +16,7 @@ import rehypeHighlight from 'rehype-highlight';
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import * as Accordion from '@radix-ui/react-accordion';
+import AceternityLoader from './AceternityLoader';
 
 // Define the Question type for type safety
 interface Question {
@@ -193,6 +194,7 @@ export default function PracticePage() {
     setCurrentIdx(0);
     setUserCode('');
     setQuestionStatus({}); // Clear status when uploading new questions
+    setLoading(true); // Show loader
     const formData = new FormData();
     formData.append('file', file);
     try {
@@ -217,6 +219,7 @@ export default function PracticePage() {
       console.error('An error occurred while uploading:', err);
       localStorage.removeItem('reansql_questions');
     }
+    setLoading(false); // Hide loader when done
   };
 
   // Accordion open state for right panel (must be before early returns)
@@ -254,7 +257,7 @@ export default function PracticePage() {
   // Place all early returns first
   if (loading) return (
     <div className="flex flex-1 items-center justify-center min-h-[60vh]">
-      <p className="text-blue-700 dark:text-blue-300 text-center animate-pulse font-semibold text-lg">Loading questions...</p>
+      <AceternityLoader message="Processing your PDF..." />
     </div>
   );
   if (!questions || questions.length === 0) return (
