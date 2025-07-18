@@ -3,8 +3,7 @@ import pdfParse from 'pdf-parse';
 import Busboy from 'busboy';
 import connectDB from '@/lib/db/mongodb';
 import { Question } from '@/lib/db/models/question';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+import { GeminiProvider } from '../../lib/ai/providers/gemini';
 
 export const config = {
     api: {
@@ -12,32 +11,8 @@ export const config = {
     },
 };
 
-// Helper to call Gemini for answer or explanation
-type GeminiType = 'answer' | 'explanation';
-async function getGeminiContent(questionText: string, type: GeminiType): Promise<string> {
-  if (!GEMINI_API_KEY) return '';
-  let prompt = '';
-  if (type === 'answer') {
-    prompt = `You are an expert Oracle SQL tutor. Write the correct Oracle SQL
-     query for this question below.\nQuestion: ${questionText}`;
-  } else {
-    prompt = `You are an expert Oracle SQL tutor. Explain the correct answer for this question
-    in a English simple words, concise, beginner-friendly way.\nQuestion: ${questionText}`;
-  }
-
-  const res = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + GEMINI_API_KEY,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
-    }
-  );
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-}
+// Instantiate the GeminiProvider (uses all available keys with failover)
+const geminiProvider = new GeminiProvider();
 
 // Helper to split PDF text into questions (copied from previous frontend logic)
 function parseQuestionsForDB(text: string) {
@@ -85,11 +60,18 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
 
           await connectDB();
 
-          // Each question call Gemini for answer & explanation then store in DB (parallelized)
+          // Each question: call GeminiProvider for answer & explanation then store in DB (parallelized)
           const results = await Promise.all(parsedQuestions.map(async ({ questionText }) => {
+
+            const answerPrompt = `You are an expert Oracle SQL tutor with 10 years also in the SQL Developer role.
+             Write the correct Oracle SQL\nquery for this question below.\nQuestion: ${questionText}`;
+            const explanationPrompt = `You are an expert Oracle SQL tutor.
+             Explain the correct answer for this question\nin simple English words, concise, 
+             beginner-friendly way. But not too long or difficult to get.\nQuestion: ${questionText}`;
+            // Use GeminiProvider for both answer and explanation
             const [aiAnswerRaw, explanation] = await Promise.all([
-              getGeminiContent(questionText, 'answer'),
-              getGeminiContent(questionText, 'explanation'),
+              geminiProvider.generateAnswer(answerPrompt),
+              geminiProvider.generateAnswer(explanationPrompt),
             ]);
             // Remove SQL comments from AI answer
             function stripSqlComments(sql: string) {
