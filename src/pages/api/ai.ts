@@ -19,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (err) {
       console.error('GeminiProvider error:', err);
       res.status(500).json({ message: 'Failed to get hint from Gemini.' });
+
     }
   } else if (type === 'chat') {
     res.status(200).json({ message: 'Chat feature coming soon.' });

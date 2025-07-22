@@ -35,6 +35,55 @@ function parseQuestionsForDB(text: string) {
   return questions;
 }
 
+// Post-process to extract only the summary and bullet/numbered points
+function extractSummaryAndBullets(text: string): string {
+  const lines = text.split('\n');
+  let summary = '';
+  const bulletLines = [];
+  let foundFirstList = false;
+  const isBulletOrNumbered = (line: string) => line.trim().startsWith('-') || /^\d+\./.test(line.trim());
+  for (const line of lines) {
+    if (!summary && line.trim() && !isBulletOrNumbered(line)) {
+      summary = line.trim();
+    }
+    if (isBulletOrNumbered(line)) {
+      foundFirstList = true;
+      bulletLines.push(line.trim().replace(/^\d+\./, '-'));
+    } else if (foundFirstList && line.trim() === '') {
+      bulletLines.push('');
+    } else if (foundFirstList && !isBulletOrNumbered(line)) {
+      break;
+    }
+  }
+  // Fallback: If no bullet points found, split the rest into sentences as bullets
+  if (bulletLines.length === 0 && text) {
+    const rest = text.replace(summary, '').trim();
+    const sentences = rest.split(/(?<=[.?!])\s+/).filter(Boolean);
+    for (const sentence of sentences) {
+      if (sentence.trim()) bulletLines.push('- ' + sentence.trim());
+    }
+  }
+  return [summary, ...bulletLines].filter(Boolean).join('\n');
+}
+async function getAgenticBulletPointExplanation(prompt: string, aiProvider: typeof geminiProvider) {
+  // Step 1: Get Gemini's initial explanation
+  const initialExplanation = await aiProvider.generateAnswer(prompt);
+
+  // Step 2: Reformat with a follow-up prompt
+  const reformatPrompt = `Reformat the following explanation into ONLY a summary sentence and a Markdown bullet list. Do NOT include any paragraphs, preambles, or extra text.\n\nSample Output:\nThis query retrieves all employees in department 10.\n\n- \`SELECT *\`: Selects all columns from the employees table.\n- \`FROM employees\`: Specifies the table to query.\n- \`WHERE department_id = 10\`: Filters results to only those in department 10.\n\nExplanation to reformat:\n${initialExplanation}`;
+
+  let bulletExplanation = await aiProvider.generateAnswer(reformatPrompt);
+  let explanation = extractSummaryAndBullets(bulletExplanation);
+
+  // Step 3: If still not a bullet list, try a final correction prompt
+  if (!explanation.includes('- ')) {
+    const finalCorrectionPrompt = `You did not follow the instructions. Please output ONLY a summary sentence and a Markdown bullet list, nothing else.`;
+    bulletExplanation = await aiProvider.generateAnswer(finalCorrectionPrompt + '\n\n' + bulletExplanation);
+    explanation = extractSummaryAndBullets(bulletExplanation);
+  }
+  return explanation;
+}
+
 export default async function handler(req:NextApiRequest, res:NextApiResponse) {
     if(req.method !== 'POST') {
         return res.status(405).json({message: 'Method not allowed'});
@@ -65,14 +114,8 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
 
             const answerPrompt = `You are an expert Oracle SQL tutor with 10 years also in the SQL Developer role.
              Write the correct Oracle SQL\nquery for this question below.\nQuestion: ${questionText}`;
-            const explanationPrompt = `You are an expert Oracle SQL tutor.
-             Explain the correct answer for this question\nin simple English words, concise, 
-             beginner-friendly way. But not too long or difficult to get.\nQuestion: ${questionText}`;
-            // Use GeminiProvider for both answer and explanation
-            const [aiAnswerRaw, explanation] = await Promise.all([
-              geminiProvider.generateAnswer(answerPrompt),
-              geminiProvider.generateAnswer(explanationPrompt),
-            ]);
+            // First, get the answer
+            const aiAnswerRaw = await geminiProvider.generateAnswer(answerPrompt);
             // Remove SQL comments from AI answer
             function stripSqlComments(sql: string) {
               // Remove multi-line comments
@@ -82,6 +125,8 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
               return noLine.trim();
             }
             const aiAnswer = stripSqlComments(aiAnswerRaw);
+            const explanationPrompt = `You are an Oracle SQL tutor.\n\nONLY output a summary sentence and a Markdown bullet list. Do NOT include any paragraphs, preambles, or extra text.\n\nFormat: Markdown bullet list only. No paragraphs, no preamble, no extra sentences.\n\nSample Output:\nThis query retrieves all employees in department 10.\n\n- \`SELECT *\`: Selects all columns from the employees table.\n- \`FROM employees\`: Specifies the table to query.\n- \`WHERE department_id = 10\`: Filters results to only those in department 10.\n\nSQL Query:\n${aiAnswer}`;
+            const explanation = await getAgenticBulletPointExplanation(explanationPrompt, geminiProvider);
             // Store in MongoDB
             const doc = await Question.create({
               pdfSource: 'uploaded',
