@@ -132,43 +132,105 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
 
           // Each question: call GeminiProvider for answer & explanation then store in DB (parallelized)
           console.log('Generating AI answers for', parsedQuestions.length, 'questions...');
-          const results = await Promise.all(parsedQuestions.map(async ({ questionText }, index) => {
+          
+          // Process questions sequentially to avoid overwhelming the API
+          const results = [];
+          let successCount = 0;
+          let failureCount = 0;
+          
+          for (let index = 0; index < parsedQuestions.length; index++) {
+            const { questionText } = parsedQuestions[index];
             console.log(`Processing question ${index + 1}/${parsedQuestions.length}`);
-
-            const answerPrompt = `You are an expert Oracle SQL tutor with 10 years also in the SQL Developer role.
-             Write the correct Oracle SQL\nquery for this question below.\nQuestion: ${questionText}`;
-            // First, get the answer
-            const aiAnswerRaw = await geminiProvider.generateAnswer(answerPrompt);
-            // Remove SQL comments from AI answer
-            function stripSqlComments(sql: string) {
-              // Remove multi-line comments
-              const noBlock = sql.replace(/\/\*[\s\S]*?\*\//g, '');
-              // Remove single-line comments
-              const noLine = noBlock.replace(/--.*$/gm, '');
-              return noLine.trim();
+            
+            // Add a small delay between questions to help with rate limiting
+            if (index > 0) {
+              await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
             }
-            const aiAnswer = stripSqlComments(aiAnswerRaw);
-            const explanationPrompt = `You are an Oracle SQL tutor.\n\nONLY output a summary sentence and a Markdown bullet list. Do NOT include any paragraphs, preambles, or extra text.\n\nFormat: Markdown bullet list only. No paragraphs, no preamble, no extra sentences.\n\nSample Output:\nThis query retrieves all employees in department 10.\n\n- \`SELECT *\`: Selects all columns from the employees table.\n- \`FROM employees\`: Specifies the table to query.\n- \`WHERE department_id = 10\`: Filters results to only those in department 10.\n\nSQL Query:\n${aiAnswer}`;
-            const explanation = await getAgenticBulletPointExplanation(explanationPrompt, geminiProvider);
-            // Store in MongoDB
-            const doc = await Question.create({
-              pdfSource: 'uploaded',
-              questionText,
-              aiAnswer,
-              explanation,
-            });
-            console.log(`Question ${index + 1} processed and stored successfully`);
-            return {
-              _id: doc._id,
-              questionText,
-              aiAnswer,
-              explanation,
-            };
-          }));
+            
+            try {
+              const answerPrompt = `You are an expert Oracle SQL tutor with many years also in the SQL Developer role.
+               Write the correct Oracle SQL\nquery for this question below.\nQuestion: ${questionText}`;
+              // First, get the answer
+              const aiAnswerRaw = await geminiProvider.generateAnswer(answerPrompt);
+              // Remove SQL comments from AI answer
+              function stripSqlComments(sql: string) {
+                // Remove multi-line comments
+                const noBlock = sql.replace(/\/\*[\s\S]*?\*\//g, '');
+                // Remove single-line comments
+                const noLine = noBlock.replace(/--.*$/gm, '');
+                return noLine.trim();
+              }
+              const aiAnswer = stripSqlComments(aiAnswerRaw);
+              const explanationPrompt = `You are an Oracle SQL tutor.\n\nONLY output a summary sentence and a Markdown bullet list. Do NOT include any paragraphs, preambles, or extra text.\n\nFormat: Markdown bullet list only. No paragraphs, no preamble, no extra sentences.\n\nSample Output:\nThis query retrieves all employees in department 10.\n\n- \`SELECT *\`: Selects all columns from the employees table.\n- \`FROM employees\`: Specifies the table to query.\n- \`WHERE department_id = 10\`: Filters results to only those in department 10.\n\nSQL Query:\n${aiAnswer}`;
+              const explanation = await getAgenticBulletPointExplanation(explanationPrompt, geminiProvider);
+              // Store in MongoDB
+              const doc = await Question.create({
+                pdfSource: 'uploaded',
+                questionText,
+                aiAnswer,
+                explanation,
+              });
+              console.log(`Question ${index + 1} processed and stored successfully`);
+              results.push({
+                _id: doc._id,
+                questionText,
+                aiAnswer,
+                explanation,
+              });
+              successCount++;
+            } catch (err) {
+              console.error(`Failed to process question ${index + 1}:`, err);
+              failureCount++;
+              
+              // If we have too many failures, stop processing
+              if (failureCount > Math.ceil(parsedQuestions.length / 2)) {
+                console.error('Too many failures, stopping processing');
+                break;
+              }
+              
+              // Add a placeholder for failed questions
+              results.push({
+                _id: `failed_${index}`,
+                questionText,
+                aiAnswer: '/* Failed to generate answer due to API limits */',
+                explanation: 'Failed to generate explanation due to API rate limits. Please try again later.',
+              });
+            }
+          }
 
-          console.log('All questions processed successfully');
+          console.log(`Processing complete. Success: ${successCount}, Failures: ${failureCount}`);
+          
+          if (successCount === 0) {
+            // If all questions failed due to API limits, store them without AI answers
+            console.log('All API calls failed. Storing questions without AI answers for manual practice.');
+            const fallbackResults = parsedQuestions.map(({ questionText }, index) => ({
+              _id: `manual_${index}`,
+              questionText,
+              aiAnswer: '/* Manual practice mode - no AI answer available */',
+              explanation: 'This question is in manual practice mode. You can practice writing SQL queries, but AI-generated answers are not available due to API rate limits.',
+            }));
+            
+            // Store questions in database without AI answers
+            for (const { questionText } of parsedQuestions) {
+              await Question.create({
+                pdfSource: 'uploaded_manual',
+                questionText,
+                aiAnswer: '/* Manual practice mode */',
+                explanation: 'Manual practice mode - AI answers not available due to rate limits.',
+              });
+            }
+            
+            return res.status(200).json({ 
+              questions: fallbackResults,
+              message: 'Questions stored in manual practice mode due to API rate limits. You can practice writing SQL, but AI answers are not available.'
+            });
+          }
+          
           // Return the stored questions
-          res.status(200).json({ questions: results });
+          res.status(200).json({ 
+            questions: results,
+            message: `Successfully processed ${successCount} questions${failureCount > 0 ? ` (${failureCount} failed due to API limits)` : ''}`
+          });
         } catch (err) {
           console.error('PDF upload/parse error:', err);
           res.status(500).json({ error: 'Failed to parse PDF or store questions' });

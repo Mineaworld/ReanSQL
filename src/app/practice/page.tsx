@@ -37,6 +37,7 @@ interface Question {
 export default function PracticePage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userCode, setUserCode] = useState('');
   // --- Add for copy functionality and line/char count ---
@@ -146,8 +147,18 @@ export default function PracticePage() {
         }
       } catch {}
     }
-        setLoading(false);
+    setLoading(false);
   }, []);
+
+  // Debug effect to monitor questions state
+  useEffect(() => {
+    console.log('Questions state changed:', questions.length, questions);
+  }, [questions]);
+
+  // Debug effect to monitor loading state
+  useEffect(() => {
+    console.log('Loading state changed:', loading);
+  }, [loading]);
 
   // --- Answer checking helper ---
   function normalizeSQL(sql: string) {
@@ -202,6 +213,8 @@ export default function PracticePage() {
     setUserCode('');
     setQuestionStatus({}); // Clear status when uploading new questions
     setLoading(true); // Show loader
+    setUploadProgress('Uploading PDF...');
+    
     const formData = new FormData();
     formData.append('file', file);
     try {
@@ -211,20 +224,39 @@ export default function PracticePage() {
       });
       if (res.ok) {
         const data = await res.json();
+        console.log('API Response:', data); // Debug log
         if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+          console.log('Setting questions:', data.questions); // Debug log
           setQuestions(data.questions);
           localStorage.setItem('reansql_questions', JSON.stringify(data.questions));
+          
+          // Show success message if there's a message from the API
+          if (data.message) {
+            console.log('Upload success:', data.message);
+            setUploadProgress(data.message);
+            // Clear progress message after 3 seconds
+            setTimeout(() => setUploadProgress(''), 3000);
+          }
         } else {
           localStorage.removeItem('reansql_questions');
+          console.error('No questions returned from API');
+          setUploadProgress('No questions found in PDF');
+          setTimeout(() => setUploadProgress(''), 3000);
         }
       } else {
         const errData = await res.json().catch(() => ({}));
         console.error('Failed to parse PDF:', errData.error || 'Unknown error');
         localStorage.removeItem('reansql_questions');
+        
+        // Show user-friendly error message
+        setUploadProgress(`Upload failed: ${errData.error || 'Unknown error occurred. Please try again.'}`);
+        setTimeout(() => setUploadProgress(''), 5000);
       }
     } catch (err) {
       console.error('An error occurred while uploading:', err);
       localStorage.removeItem('reansql_questions');
+      setUploadProgress('Network error occurred while uploading. Please check your connection and try again.');
+      setTimeout(() => setUploadProgress(''), 5000);
     }
     setLoading(false); // Hide loader when done
   };
@@ -264,7 +296,7 @@ export default function PracticePage() {
   // Place all early returns first
   if (loading) return (
     <div className="flex flex-1 items-center justify-center min-h-[60vh]">
-      <AceternityLoader message="Processing your PDF..." />
+      <AceternityLoader message={uploadProgress || "Processing your PDF..."} />
     </div>
   );
   if (!questions || questions.length === 0) return (

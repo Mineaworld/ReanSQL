@@ -4,6 +4,9 @@ import type { AIProvider } from './base';
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
+// Helper function to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export class GeminiProvider implements AIProvider {
   private apiKeys: string[];
 
@@ -29,6 +32,8 @@ export class GeminiProvider implements AIProvider {
     };
 
     let lastError: unknown = null;
+    let retryCount = 0;
+    const maxRetries = 3;
 
     for (const key of this.apiKeys) {
       try {
@@ -47,6 +52,26 @@ export class GeminiProvider implements AIProvider {
           
           if (res.status === 429 || res.status === 403) {
             lastError = errorText;
+            
+            // Parse retry delay from error response
+            try {
+              const errorData = JSON.parse(errorText);
+              const retryDelay = errorData?.error?.details?.find(
+                (detail: any) => detail['@type'] === 'type.googleapis.com/google.rpc.RetryInfo'
+              )?.retryDelay;
+              
+              if (retryDelay && retryCount < maxRetries) {
+                const delaySeconds = parseInt(retryDelay.replace('s', ''));
+                console.log(`Rate limited. Waiting ${delaySeconds} seconds before retry...`);
+                await delay(delaySeconds * 1000);
+                retryCount++;
+                continue;
+              }
+            } catch (parseError) {
+              console.error('Failed to parse retry delay from error response');
+            }
+            
+            // If we can't parse retry delay or max retries reached, try next key
             continue;
           }
           throw new Error(`Gemini API error: ${res.status} ${errorText}`);
@@ -67,7 +92,17 @@ export class GeminiProvider implements AIProvider {
       } catch (err) {
         console.error('Gemini API call failed:', err);
         lastError = err;
-        continue;
+        
+        // If it's a rate limit error and we haven't exceeded max retries, wait and retry
+        if (err instanceof Error && err.message.includes('429') && retryCount < maxRetries) {
+          const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff
+          console.log(`Rate limited. Waiting ${waitTime/1000} seconds before retry...`);
+          await delay(waitTime);
+          retryCount++;
+          continue;
+        }
+        
+        continue; // Try next key
       }
     }
     throw new Error(`All Gemini API keys failed. Last error: ${lastError}`);
