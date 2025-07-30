@@ -88,29 +88,52 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
     if(req.method !== 'POST') {
         return res.status(405).json({message: 'Method not allowed'});
     }
+    
     // Parse incoming pdf file
     const bb = Busboy({headers: req.headers});
     const pdfBuffer: Buffer[] = [];
+    let hasFile = false;
 
     bb.on('file', (fieldname: string, file: NodeJS.ReadableStream) => {
+        hasFile = true;
         file.on('data', (data: Buffer) => {
             pdfBuffer.push(data);
+        });
+        
+        file.on('error', (err) => {
+            console.error('File processing error:', err);
+            res.status(500).json({ error: 'File processing failed' });
         });
     });
 
     bb.on('finish', async () => {
+        if (!hasFile) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        
         const buffer = Buffer.concat(pdfBuffer);
         try {
+          console.log('Parsing PDF...');
           const data = await pdfParse(buffer);
           const rawText = data.text;
+          console.log('PDF parsed successfully, text length:', rawText.length);
 
           // Split rawText into questions using improved logic
           const parsedQuestions = parseQuestionsForDB(rawText);
+          console.log('Questions parsed:', parsedQuestions.length);
 
+          if (parsedQuestions.length === 0) {
+            return res.status(400).json({ error: 'No questions found in PDF' });
+          }
+
+          console.log('Connecting to database...');
           await connectDB();
+          console.log('Database connected successfully');
 
           // Each question: call GeminiProvider for answer & explanation then store in DB (parallelized)
-          const results = await Promise.all(parsedQuestions.map(async ({ questionText }) => {
+          console.log('Generating AI answers for', parsedQuestions.length, 'questions...');
+          const results = await Promise.all(parsedQuestions.map(async ({ questionText }, index) => {
+            console.log(`Processing question ${index + 1}/${parsedQuestions.length}`);
 
             const answerPrompt = `You are an expert Oracle SQL tutor with 10 years also in the SQL Developer role.
              Write the correct Oracle SQL\nquery for this question below.\nQuestion: ${questionText}`;
@@ -134,6 +157,7 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
               aiAnswer,
               explanation,
             });
+            console.log(`Question ${index + 1} processed and stored successfully`);
             return {
               _id: doc._id,
               questionText,
@@ -142,6 +166,7 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
             };
           }));
 
+          console.log('All questions processed successfully');
           // Return the stored questions
           res.status(200).json({ questions: results });
         } catch (err) {
@@ -149,5 +174,11 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
           res.status(500).json({ error: 'Failed to parse PDF or store questions' });
         }
       });
+
+    bb.on('error', (err) => {
+        console.error('Busboy error:', err);
+        res.status(500).json({ error: 'File upload failed' });
+    });
+
     req.pipe(bb);
 }
